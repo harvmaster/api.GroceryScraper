@@ -57,7 +57,7 @@ class ColesScraper implements Scraper {
     const paginationElement = await page.$('[data-testid="pagination"]')
     const ulElement = await paginationElement?.$('ul')
     
-    const maxPages = 3
+    const maxPages = 1
     // const maxPages = await ulElement?.evaluate((el) => {
     //   const childCount = el.childElementCount
     //   const lastPage = el.children[childCount-2]
@@ -126,44 +126,6 @@ class ColesScraper implements Scraper {
     })
 
     return products
-    
-    // const browser = await puppeteer.launch()
-    // const page = await browser.newPage()
-    // await page.goto(url)
-
-    // const el = await page.$$('[data-testid="product-tile"]')
-    // const products = await Promise.all(el.map(async (div) => {
-    //   const priceValue = await div.$('.price__value')
-    //   const priceTxt = await priceValue?.getProperty('textContent')
-    //   const price = await priceTxt?.jsonValue()
-      
-    //   const titleValue = await div.$('.product__title')
-    //   const titleTxt = await titleValue?.getProperty('textContent')
-    //   const title = await titleTxt?.jsonValue()
-
-    //   const wasElement = await div.$('.price__was')
-    //   const wasTxt = await wasElement?.getProperty('textContent')
-    //   const was = await wasTxt?.jsonValue()
-
-    //   // Replace every non-digit character with an empty string
-    //   const priceDigits = price?.replace(/\D/g, '') || '0'
-    //   const priceNum = (parseFloat(priceDigits)/100)
-    //   const priceNumFixed = priceNum?.toFixed(2)
-
-    //   // Replace every non-digit character with an empty string
-    //   const wasDigits = was?.replace(/\D/g, '') || '0'
-    //   const wasNum = (parseFloat(wasDigits)/100)
-    //   const wasNumFixed = wasNum?.toFixed(2)
-
-    //   return {
-    //     name: title,
-    //     price: priceNum,
-    //     discounted_from: wasNum,
-    //     img_url: undefined
-    //   }
-    // }))
-
-    // return products
   }
 }
 
