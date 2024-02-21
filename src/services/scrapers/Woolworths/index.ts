@@ -77,8 +77,10 @@ export class WoolworthsScraper {
   }
 
   async scrapeAllCategories () {
-    const browser = await puppeteer.launch()
+    const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36';
+    const browser = await puppeteer.launch({ headless: true })
     const page = await browser.newPage()
+    await page.setUserAgent(userAgent)
 
     page.on('response', response => {
       console.log(response.url())
@@ -113,7 +115,7 @@ export class WoolworthsScraper {
 
     const category = CATEGORIES[0]
     const products = await this.scrapeCategory(page, category)
-    console.log(products)
+    // console.log(products)
     await browser.close()
     return products
     
@@ -138,7 +140,7 @@ export class WoolworthsScraper {
       categoryId: category.id,
       pageNumber: 1,
       pageSize: 24,
-      sortType: 'TraderRelevance',
+      sortType: 'Name',
       url: category.url,
       location: category.location,
       formatObject: `{\"name\":\"${category.name}\"}`,
@@ -165,17 +167,22 @@ export class WoolworthsScraper {
     console.log('numProducts: ', numProducts, 'numPages: ', numPages)
 
     const allProductPromises: Promise<Product[]>[] = []
+
+    const productRes: Product[]= []
     for (let i = 1; i <= numPages; i++) {
       body.pageNumber = i
       body.location = category.location + `?pageNumber=${i}`
       body.url = category.url + `?pageNumber=${i}`
-      allProductPromises.push(this.scrapeURL(page, body))
+
+      const products = await this.scrapeURL(page, body)
+      productRes.push(...products)
+      // allProductPromises.push(this.scrapeURL(page, body))
     }
 
     const allProducts = await Promise.all(allProductPromises).then((products) => products.flat())
-    console.log('allProducts: ', allProducts)
+    // console.log('allProducts: ', allProducts)
 
-    return allProducts
+    return productRes
 
     
 
