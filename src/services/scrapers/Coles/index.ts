@@ -117,7 +117,7 @@ class ColesScraper implements Scraper {
         return {
           name: title,
           price: priceNum,
-          discounted_from: wasNum,
+          discounted_from: wasNum || priceNum,
           img_url: undefined
         }
       }))

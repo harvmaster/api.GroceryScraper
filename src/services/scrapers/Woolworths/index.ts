@@ -177,7 +177,7 @@ export class WoolworthsScraper implements Scraper {
       const product = bundle.Products[0];
       return {
         name: product.DisplayName,
-        price: product.Price,
+        price: product.Price || product.InstorePrice,
         discounted_from: product.WasPrice,
         img_url: product.DetailsImagePaths[0]
       };
