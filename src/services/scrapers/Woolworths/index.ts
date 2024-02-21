@@ -1,5 +1,5 @@
 import puppeteer from 'puppeteer';
-// import { Browser } from 'puppeteer';
+import { Browser, Page } from 'puppeteer';
 import axios from 'axios'
 import { Scraper } from '../Scraper';
 import RateLimiter from '../../RateLimiter';
@@ -11,12 +11,60 @@ interface Product {
   img_url: string
 }
 
+interface WoolworthsCategory {
+  id: string
+  name: string
+  url: string
+  location: string
+}
+
+interface WoolworthsRequestBody {
+  categoryId: string
+  pageNumber: number
+  pageSize: number
+  sortType: string
+  url: string
+  location: string
+  formatObject: string
+  isSpecial: boolean
+  isBundle: boolean
+  isMobile: boolean
+  filters: any[]
+  token: string
+  gpBoost: number
+  isHideUnavailableProducts: boolean
+  isRegisteredRewardCardPromotion: boolean
+  enableAdReRanking: boolean
+  groupEdmVariants: boolean
+  categoryVersion: string
+}
+
 const WOOLWORTHS_API_ENDPOINT = 'https://www.woolworths.com.au/apis/ui/browse/category'
-const CATEGORY_IDS = [
-  '1_DEB537E' // Bakery
+const CATEGORIES: WoolworthsCategory[] = [
+  { id: '1_DEB537E', name: 'Bakery', url: '/shop/browse/bakery', location: '/shop/browse/bakery' },
+  { id: '1-E5BEE36E', name: 'Fruit & Veg', url: '/shop/browse/fruit-veg', location: '/shop/browse/fruit-veg' },
+  { id: '1_D5A2236', name: 'Poultry, Meat & Seafood', url: '/shop/browse/poultry-meat-seafood', location: '/shop/browse/poultry-meat-seafood' },
+  { id: '1_3151F6F', name: 'Deli & Chilled Meals', url: '/shop/browse/deli-chilled-meals', location: '/shop/browse/deli-chilled-meals' },
+  { id: '1_6E4F4E4', name: 'Dairy, Eggs & Fridge', url: '/shop/browse/dairy-eggs-fridge', location: '/shop/browse/dairy-eggs-fridge' },
+  { id: '1_9E92C35', name: 'Lunch Box', url: '/shop/browse/lunch-box', location: '/shop/browse/lunch-box' },
+  { id: '1_39FD49C', name: 'Pantry', url: '/shop/browse/pantry', location: '/shop/browse/pantry' },
+  { id: '1_F229FBE', name: 'International Foods', url: '/shop/browse/international-foods', location: '/shop/browse/international-foods' },
+  { id: '1_717445A', name: 'Snacks & Confectionery', url: '/shop/browse/snacks-confectionery', location: '/shop/browse/snacks-confectionery' },
+  { id: '1_ACA2FC2', name: 'Freezer', url: '/shop/browse/freezer', location: '/shop/browse/freezer' },
+  { id: '1_5AF3A0A', name: 'Drinks', url: '/shop/browse/drinks', location: '/shop/browse/drinks' },
+  { id: '1_8E4DA6F', name: 'Beer, Wine & Spirits', url: '/shop/browse/beer-wine-spirits', location: '/shop/browse/beer-wine-spirits' },
+  { id: '1_9851658', name: 'Health & Wellness', url: '/shop/browse/health-wellness', location: '/shop/browse/health-wellness' },
+  { id: '1_894D0A8', name: 'Beauty & Personal Care', url: '/shop/browse/beauty-personal-care', location: '/shop/browse/beauty-personal-care' },
+  { id: '1_F89E4BB', name: 'HealthyLife Pharmacy', url: '/shop/browse/healthylife-pharmacy', location: '/shop/browse/healthylife-pharmacy' },
+  { id: '1_717A94B', name: 'Baby', url: '/shop/browse/baby', location: '/shop/browse/baby' },
+  { id: '1_DEA3ED5', name: 'Home & Lifestyle', url: '/shop/browse/home-lifestyle', location: '/shop/browse/home-lifestyle' },
+  { id: '1_2432B58', name: 'Cleaning & Maintenance', url: '/shop/browse/cleaning-maintenance', location: '/shop/browse/cleaning-maintenance' },
+  { id: '1_61D6FEB', name: 'Pet', url: '/shop/browse/pet', location: '/shop/browse/pet' },
+  { id: '1_B63CF9E', name: 'Front of Store', url: '/shop/browse/front-of-store', location: '/shop/browse/front-of-store' }
 ]
 
-const WOOLWORTHS_URL = 'https://www.woolworths.com.au/shop/browse/bakery'
+const WOOLWORTHS_URL = 'https://www.woolworths.com.au'
+// const WOOLWORTHS_URL = 'https://www.woolworths.com.au/shop/browse/bakery'
 const SPEED_LIMIT = 20
 
 export class WoolworthsScraper {
@@ -28,193 +76,176 @@ export class WoolworthsScraper {
     this.#rateLimit = new RateLimiter(SPEED_LIMIT, 5)
   }
 
-  // async scrapeAllCategories () {
-
-  //   console.log('scraping')
-  //   const res = await axios.post(WOOLWORTHS_API_ENDPOINT, {
-  //     categoryId: CATEGORY_IDS[0],
-  //     pageNumber: 1,
-  //     pageSize: 24,
-  //     sortType: "TraderRelevance",
-  //     url: "/shop/browse/bakery",
-  //     location: "/shop/browse/bakery",
-  //     formatObject: "{\"name\":\"Bakery\"}",
-  //     isSpecial: false,
-  //     isBundle: false,
-  //     isMobile: false,
-  //     filters: [],
-  //     token: "",
-  //     gpBoost: 0,
-  //     isHideUnavailableProducts: false,
-  //     isRegisteredRewardCardPromotion: false,
-  //     enableAdReRanking: false,
-  //     groupEdmVariants: true,
-  //     categoryVersion: "v2"
-  //   })
-
-  //   console.log(res.data)
-  //   return res.data.Bundles.map(bundle => {
-  //     const product = bundle.Products[0]
-  //     return {
-  //       name: product.DisplayName,
-  //       price: product.Price,
-  //       discounted_from: product.WasPrice,
-  //       image_url: product.DetailsImagePaths[0]
-  //     }
-  //   })
-  // }
-
   async scrapeAllCategories () {
     const browser = await puppeteer.launch()
     const page = await browser.newPage()
-    await page.goto(WOOLWORTHS_URL)
 
-    // await page.setRequestInterception(true);
-    // page.on('request', (req) => {
-    //   if (req.resourceType() === 'image' || req.resourceType() === 'script') return req.abort();
-    //   return req.continue();
+    page.on('response', response => {
+      console.log(response.url())
+      if (response.url().endsWith("apis/ui/browse/category"))
+        console.log("response code: ", response.status());
+        // do something here
+    });
+
+    const htmlOnly = async (page: Page) => {
+      await page.setRequestInterception(true); // enable request interception
+    
+      page.on('request', (req) => {
+        if (!["document", "xhr", "fetch"].includes(req.resourceType())) {
+          return req.abort();
+        }
+        console.log(req.resourceType(), req.url())
+        req.continue();
+      });
+    };
+    await htmlOnly(page);
+
+    
+    try {
+      await page.goto(WOOLWORTHS_URL)
+    } catch (err) {
+      console.log('failed to load page: ', err)
+      await browser.close()
+      return []
+    }
+    
+    await page.setBypassCSP(true)
+
+    const category = CATEGORIES[0]
+    const products = await this.scrapeCategory(page, category)
+    console.log(products)
+    await browser.close()
+    return products
+    
+
+    // const categoryPromises = CATEGORIES.map(async (category) => {
+    //   const products = await this.scrapeCategory(page, category)
+    //   return products
+    // })
+
+    // const allProducts = await Promise.all(categoryPromises)
+    // console.log(allProducts)
+
+    // await browser.close()
+
+    // return allProducts
+  }
+
+  async scrapeCategory (page: Page, category: WoolworthsCategory) {
+    console.log('scraping category: ', category.name, category)
+
+    const body = {
+      categoryId: category.id,
+      pageNumber: 1,
+      pageSize: 24,
+      sortType: 'TraderRelevance',
+      url: category.url,
+      location: category.location,
+      formatObject: `{\"name\":\"${category.name}\"}`,
+      isSpecial: false,
+      isBundle: false,
+      isMobile: false,
+      filters: [],
+      token: '',
+      gpBoost: 0,
+      isHideUnavailableProducts: false,
+      isRegisteredRewardCardPromotion: false,
+      enableAdReRanking: false,
+      groupEdmVariants: true,
+      categoryVersion: 'v2'
+    }
+
+    // Do one request to get the number of products
+    const res = await this.callFetch(page, body)
+    console.log('got first category response', res)
+
+    const numProducts = res.TotalRecordCount
+    const numPages = Math.ceil(numProducts / 24)
+
+    console.log('numProducts: ', numProducts, 'numPages: ', numPages)
+
+    const allProductPromises: Promise<Product[]>[] = []
+    for (let i = 1; i <= numPages; i++) {
+      body.pageNumber = i
+      body.location = category.location + `?pageNumber=${i}`
+      body.url = category.url + `?pageNumber=${i}`
+      allProductPromises.push(this.scrapeURL(page, body))
+    }
+
+    const allProducts = await Promise.all(allProductPromises).then((products) => products.flat())
+    console.log('allProducts: ', allProducts)
+
+    return allProducts
+
+    
+
+    // const res: any = await page.evaluate(async (body) => {
+    //   // return JSON.stringify(body)
+    //   return await fetch('https://www.woolworths.com.au/apis/ui/browse/category', {
+    //     method: 'POST',
+    //     headers: {
+    //       'Content-Type': 'application/json'
+    //     },
+    //     body: JSON.stringify(body)
+    //   })
+    //   .then(res => res.json())
+    //   .then(res => res)
+    //   .catch(err => err.message)
+    // }, body)
+
+    // console.log('res: ', res)
+
+    // if (!res.Bundles) {
+    //   console.log('failed to scrape category: ', category.name, res)
+    //   return []
+    // }
+
+    // const products = res.Bundles.map((bundle: any) => {
+    //   const product = bundle.Products[0];
+    //   return {
+    //     name: product.DisplayName,
+    //     price: product.Price,
+    //     discounted_from: product.WasPrice,
+    //     img_url: product.DetailsImagePaths[0]
+    //   };
     // });
 
-    const content = await page.content()
-    console.log(content)
+    // return products
+  } 
 
-    const productTiles = await page.$$('.product-grid-v2--tile')
-    console.log(productTiles)
-    const products = await Promise.all(productTiles.map(async (tile) => {
-      const nameContainer = await tile.$('.product-title-container')
-      const name = await nameContainer.$('a').then(el => el?.jsonValue())
+  async scrapeURL (page: Page, request: WoolworthsRequestBody): Promise<Product[]> {
+    const res: any = await this.callFetch(page, request)
 
-      const priceContainer = await tile.$('.product-tile-price')
-      const price = await priceContainer.$('.primary').then(el => el?.jsonValue())
+    if (!res.Bundles) {
+      console.log('failed to scrape category: ', request.categoryId, res)
+      return []
+    }
 
-      const discounted_from = await tile.$eval('.was-price', el => el.textContent)
-      const img_url = await tile.$eval('.product-image', el => el.getAttribute('src'))
-
+    const products = res.Bundles.map((bundle: any) => {
+      const product = bundle.Products[0];
       return {
-        name,
-        price,
-        discounted_from,
-        img_url
-      }
-    }))
-    console.log(products)
+        name: product.DisplayName,
+        price: product.Price,
+        discounted_from: product.WasPrice,
+        img_url: product.DetailsImagePaths[0]
+      };
+    });
 
-    await browser.close()
     return products
   }
 
-  // async scrapeCategory (browser: Browser, category_url: string) {
-
-  // }
-
-  // async scrapeURL (browser: Browser, url: string): Promise<Product[]> {
-
-  // }
-
-  // async scrapeAllCategories () {
-  //   const browser = await puppeteer.launch()
-  //   const page = await browser.newPage()
-  //   await page.goto(WOOLWORTHS_URL)
-
-  //   const categoryCardElements = await page.$$('[data-testid="category-card"]')
-  //   const categoriesUnfiltered = await Promise.all(categoryCardElements.map(async (el) => {
-  //     const href = await el?.getProperty('href')
-  //     const url = await href?.jsonValue() as string
-  //     const category = await el?.getProperty('textContent').then(txt => txt.jsonValue())
-  //     return { name: category, url }
-  //   }))
-
-  //   const categories = categoriesUnfiltered.filter((cat) => cat.url !== null && cat.name !== 'Specials')
-  //   console.log(categories)
-
-  //   const categoryPromises = categories.map(async (category) => {
-  //     const products = await this.scrapeCategory(browser, category.url)
-  //     return products
-  //   })
-
-  //   const productsByCategory = await Promise.all(categoryPromises)
-  //   const products = productsByCategory.flat()
-
-  //   await browser.close()
-  //   return products
-  // }
-
-  // async scrapeCategory (browser: Browser, category_url: string) {
-  //   // const browser = await puppeteer.launch()
-  //   const page = await browser.newPage()
-  //   await page.goto(category_url)
-
-  //   const paginationElement = await page.$('[data-testid="pagination"]')
-  //   const ulElement = await paginationElement?.$('ul')
-    
-  //   const maxPages = 3
-  //   // const maxPages = await ulElement?.evaluate((el) => {
-  //   //   const childCount = el.childElementCount
-  //   //   const lastPage = el.children[childCount-2]
-  //   //   const lastPageNum = lastPage?.textContent
-  //   //   return parseInt(lastPageNum)
-  //   // })
-
-  //   const pagePromises: Promise<Product[]>[] = []
-  //   pagePromises.push(this.scrapeURL(browser, category_url))
-  //   for (let i = 2; i <= maxPages; i++) {
-  //     const pageURL = `${category_url}?page=${i}`
-  //     pagePromises.push(this.scrapeURL(browser, pageURL))
-  //   }
-
-  //   const productByPage = await Promise.all(pagePromises)
-  //   const products = productByPage.flat()
-
-  //   return products
-  // }
-
-  // async scrapeURL (browser: Browser, url: string): Promise<Product[]> {
-  //   const products = await this.#rateLimit.add<Product[]>(async () => {
-  //     console.log('Scraping', url)
-  //     const page = await browser.newPage()
-
-  //     await page.setRequestInterception(true);
-  //     page.on('request', (req) => {
-  //       if (req.resourceType() === 'image' || req.resourceType() === 'script') return req.abort();
-  //       return req.continue();
-  //     });
-      
-  //     await page.goto(url)
-  //     const el = await page.$$('[data-testid="product-tile"]')
-  //     const products = await Promise.all(el.map(async (div) => {
-  //       const priceValue = await div.$('.price__value')
-  //       const priceTxt = await priceValue?.getProperty('textContent')
-  //       const price = await priceTxt?.jsonValue()
-        
-  //       const titleValue = await div.$('.product__title')
-  //       const titleTxt = await titleValue?.getProperty('textContent')
-  //       const title = await titleTxt?.jsonValue()
-
-  //       const wasElement = await div.$('.price__was')
-  //       const wasTxt = await wasElement?.getProperty('textContent')
-  //       const was = await wasTxt?.jsonValue()
-
-  //       // Replace every non-digit character with an empty string
-  //       const priceDigits = price?.replace(/\D/g, '') || '0'
-  //       const priceNum = (parseFloat(priceDigits)/100)
-  //       const priceNumFixed = priceNum?.toFixed(2)
-
-  //       // Replace every non-digit character with an empty string
-  //       const wasDigits = was?.replace(/\D/g, '') || '0'
-  //       const wasNum = (parseFloat(wasDigits)/100)
-  //       const wasNumFixed = wasNum?.toFixed(2)
-
-  //       return {
-  //         name: title,
-  //         price: priceNum,
-  //         discounted_from: wasNum,
-  //         img_url: undefined
-  //       }
-  //     }))
-
-  //     return products
-  //   })
-
-  //   return products
-  // }
+  async callFetch (page: Page, request: WoolworthsRequestBody): Promise<any> {
+    return await page.evaluate(async (request, url) => {
+      return await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(request)
+      })
+      .then(res => res.json())
+      .then(res => res)
+      .catch(err => err.message)
+    }, request, WOOLWORTHS_API_ENDPOINT)
+  }
 }
