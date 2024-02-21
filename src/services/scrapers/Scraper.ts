@@ -9,6 +9,6 @@ type ProductCallback = (product: Product) => Promise<void>
 
 export interface Scraper {
   scrapeAllCategories: () => Promise<Product[]>
-  scrapeCategory: (browser, category_url: string) => Promise<Product[]>
-  scrapeURL: (browser, url: string) => Promise<Product[]>
+  // scrapeCategory: (browser, category_url: string) => Promise<Product[]>
+  // scrapeURL: (browser, url: string) => Promise<Product[]>
 }

@@ -64,12 +64,9 @@ const CATEGORIES: WoolworthsCategory[] = [
 ]
 
 const WOOLWORTHS_URL = 'https://www.woolworths.com.au'
-// const WOOLWORTHS_URL = 'https://www.woolworths.com.au/shop/browse/bakery'
 const SPEED_LIMIT = 20
 
-export class WoolworthsScraper {
-// export class WoolworthsScraper implements Scraper {
-
+export class WoolworthsScraper implements Scraper {
   #rateLimit: RateLimiter
 
   constructor () {
@@ -82,26 +79,23 @@ export class WoolworthsScraper {
     const page = await browser.newPage()
     await page.setUserAgent(userAgent)
 
-    page.on('response', response => {
-      console.log(response.url())
-      if (response.url().endsWith("apis/ui/browse/category"))
-        console.log("response code: ", response.status());
-        // do something here
-    });
+    // page.on('response', response => {
+    //   console.log(response.url())
+    //   if (response.url().endsWith("apis/ui/browse/category"))
+    //     console.log("response code: ", response.status());
+    //     // do something here
+    // });
 
     const htmlOnly = async (page: Page) => {
       await page.setRequestInterception(true); // enable request interception
-    
       page.on('request', (req) => {
         if (!["document", "xhr", "fetch"].includes(req.resourceType())) {
           return req.abort();
         }
-        console.log(req.resourceType(), req.url())
         req.continue();
       });
     };
     await htmlOnly(page);
-
     
     try {
       await page.goto(WOOLWORTHS_URL)
@@ -111,26 +105,16 @@ export class WoolworthsScraper {
       return []
     }
     
+    // This allows us to call the fetch API from the page
     await page.setBypassCSP(true)
 
+    // start scraping each category sequentially. Puppeteer cant evaluate fetch in parallel
     const category = CATEGORIES[0]
     const products = await this.scrapeCategory(page, category)
     // console.log(products)
+
     await browser.close()
     return products
-    
-
-    // const categoryPromises = CATEGORIES.map(async (category) => {
-    //   const products = await this.scrapeCategory(page, category)
-    //   return products
-    // })
-
-    // const allProducts = await Promise.all(categoryPromises)
-    // console.log(allProducts)
-
-    // await browser.close()
-
-    // return allProducts
   }
 
   async scrapeCategory (page: Page, category: WoolworthsCategory) {
@@ -161,13 +145,12 @@ export class WoolworthsScraper {
     const res = await this.callFetch(page, body)
     console.log('got first category response', res)
 
+    // Get number of requests needed to scrape all products
     const numProducts = res.TotalRecordCount
     const numPages = Math.ceil(numProducts / 24)
-
     console.log('numProducts: ', numProducts, 'numPages: ', numPages)
 
-    const allProductPromises: Promise<Product[]>[] = []
-
+    // Call all requests sequentially. Puppeteer cant evaluate multiple requests at once.
     const productRes: Product[]= []
     for (let i = 1; i <= numPages; i++) {
       body.pageNumber = i
@@ -176,50 +159,12 @@ export class WoolworthsScraper {
 
       const products = await this.scrapeURL(page, body)
       productRes.push(...products)
-      // allProductPromises.push(this.scrapeURL(page, body))
     }
 
-    const allProducts = await Promise.all(allProductPromises).then((products) => products.flat())
-    // console.log('allProducts: ', allProducts)
-
     return productRes
-
-    
-
-    // const res: any = await page.evaluate(async (body) => {
-    //   // return JSON.stringify(body)
-    //   return await fetch('https://www.woolworths.com.au/apis/ui/browse/category', {
-    //     method: 'POST',
-    //     headers: {
-    //       'Content-Type': 'application/json'
-    //     },
-    //     body: JSON.stringify(body)
-    //   })
-    //   .then(res => res.json())
-    //   .then(res => res)
-    //   .catch(err => err.message)
-    // }, body)
-
-    // console.log('res: ', res)
-
-    // if (!res.Bundles) {
-    //   console.log('failed to scrape category: ', category.name, res)
-    //   return []
-    // }
-
-    // const products = res.Bundles.map((bundle: any) => {
-    //   const product = bundle.Products[0];
-    //   return {
-    //     name: product.DisplayName,
-    //     price: product.Price,
-    //     discounted_from: product.WasPrice,
-    //     img_url: product.DetailsImagePaths[0]
-    //   };
-    // });
-
-    // return products
   } 
 
+  // Scrape the paginated category and format the items
   async scrapeURL (page: Page, request: WoolworthsRequestBody): Promise<Product[]> {
     const res: any = await this.callFetch(page, request)
 
