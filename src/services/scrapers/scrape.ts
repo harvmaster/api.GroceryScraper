@@ -15,11 +15,19 @@ const scrape = async (scraper: Scraper) => {
   const toCreateProducts = scrapedProducts.filter((product) => !existingProducts.find((existingProduct) => existingProduct.name === product.name))
   
   // Add tags to the new products
-  
+  const tags = await getBulkItemTags(toCreateProducts.map((product) => product.name))
+  const taggedProducts = Object.keys(tags).map((key) => {
+    const product = toCreateProducts.find((product) => product.name === key)
+    if (product) {
+      product.tags = tags[key]
+    }
+    return product
+  })
 
   // Save new products to the database
-  const newProductPromises = toCreateProducts.map(async (product) => {
-
+  const newProductPromises = taggedProducts.map(async (product) => {
+    const newProduct = new Products(product)
+    return newProduct.save()
   })
 
 }

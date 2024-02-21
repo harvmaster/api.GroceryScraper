@@ -8,6 +8,7 @@ interface Product {
   price: number
   discounted_from: number
   img_url: string
+  tags?: string[]
 }
 
 const COLES_URL = 'https://www.coles.com.au/browse'

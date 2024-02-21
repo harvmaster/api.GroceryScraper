@@ -3,6 +3,7 @@ interface Product {
   price: number
   discounted_from: number
   img_url: string
+  tags?: string[]
 }
 
 type ProductCallback = (product: Product) => Promise<void>

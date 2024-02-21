@@ -43,7 +43,7 @@ export const getBulkItemTags = async (itemNames: string[]) => {
     apiKey: openaiApiKey,
   })
 
-  const system = `Given an array of items, provide a list of tags that describe the individual items. Respond in a json format like this { success: boolean, items: { itemNaeme: string[] } }. Be verbose with the amount of tags. Minimum 7 tags per item.`
+  const system = `Given an array of items, provide a list of tags that describe the individual items. Respond in a json format like this { success: boolean, items: { itemName: string[] } }. Be verbose with the amount of tags. Minimum 7 tags per item.`
 
   const response = await openaiClient.chat.completions.create({
     model: "gpt-3.5-turbo",
