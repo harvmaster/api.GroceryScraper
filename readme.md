@@ -1,11 +1,13 @@
 # api.GroceryScraper
 Scrape grocery stores and create REST API endpoints to access the information
 
-## Support Supermarkets
+## Supported Supermarkets
 - Coles Supermarket (AU)
+- Woolworths (AU)
 
 ## Todo
-- Implement Woolworths (AU)
+- Saving product to database
+- Match items between retailers
 - Implement Aldi (AU)
 - Implement searchable endpoints
 - Implement webhook functionality for updated products
@@ -15,8 +17,10 @@ Scrape grocery stores and create REST API endpoints to access the information
 ## Search Product
 ```
 GET /products?q="ProductTag"
-
-res {
+```
+Res
+```
+{
   [
     {
       id,
