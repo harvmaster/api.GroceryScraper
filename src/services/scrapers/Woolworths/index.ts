@@ -1,15 +1,7 @@
 import puppeteer from 'puppeteer';
 import { Page } from 'puppeteer';
-import { Scraper } from '../Scraper';
+import { Scraper, Product } from '../Scraper';
 import RateLimiter from '../../RateLimiter';
-
-interface Product {
-  name: string
-  price: number
-  discounted_from: number
-  img_url: string
-  tags?: string[]
-}
 
 interface WoolworthsCategory {
   id: string
@@ -175,13 +167,15 @@ export class WoolworthsScraper implements Scraper {
       return []
     }
 
-    const products = res.Bundles.map((bundle: any) => {
+    const products: Product[] = res.Bundles.map((bundle: any): Product => {
       const product = bundle.Products[0];
       return {
         name: product.DisplayName,
         price: product.Price || product.InstorePrice,
         discounted_from: product.WasPrice,
-        img_url: product.DetailsImagePaths[0]
+        img_url: product.DetailsImagePaths[0],
+        supplier_product_url: '', // Add the missing property
+        supplier_product_id: '' // Add the missing property
       };
     });
 

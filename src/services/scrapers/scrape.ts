@@ -45,13 +45,10 @@ const scrape = async (scraper: Scraper) => {
   const chatGPTMatches = await Promise.all(chatGPTMatchesPromises)
 
   // filter based on whether there was a match
-  const matchedProducts = chatGPTMatches.filter((match) => match.matched)
-  productsWithoutSimilar.push(...chatGPTMatches.filter((match) => !match.matched).map((match) => match.product))
+  const matchedProducts = chatGPTMatches.filter((match) => match.match)
+  productsWithoutSimilar.push(...chatGPTMatches.filter((match) => !match.match).map((match) => match.product))
 
-  // Get existing products and create a productEvent 
-  const existingNames = existingProducts.map((product) => product.name)
-
-  const 
+  
 
   // Get the new products and add them to the database
   const toCreateProducts = scrapedProducts.filter((product) => !existingProducts.find((existingProduct) => existingProduct.name === product.name))

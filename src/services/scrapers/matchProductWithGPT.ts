@@ -1,12 +1,5 @@
 import mongoose from 'mongoose'
-
-interface Product {
-  name: string
-  price: number
-  discounted_from: number
-  img_url: string
-  tags?: string[]
-}
+import { Product } from './Scraper'
 
 interface ProductCrucialInfo {
   id: string | mongoose.Schema.Types.ObjectId

@@ -24,7 +24,7 @@ const schema: Schema<IProductListingDocument> = new Schema({
     required: true,
     index: true,
   },
-  supplier_product_id: {
+  supplier_product_id: { // If the supplier does not provide an ID, we will use a sha256 hash of the product name
     type: String,
     required: true,
     index: true,
