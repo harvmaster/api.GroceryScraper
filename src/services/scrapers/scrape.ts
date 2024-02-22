@@ -3,6 +3,7 @@ import Products from '../../models/Product';
 import { Scraper } from './Scraper';
 import ColesScraper from './Coles';
 import { getItemTags, getBulkItemTags } from '../ItemTagger';
+import getProductSimilarity from './getProductSimilarity';
 
 const scrape = async (scraper: Scraper) => {
   // const existingProducts = await Products.find({});
@@ -25,10 +26,15 @@ const scrape = async (scraper: Scraper) => {
   })
 
   // Save new products to the database
-  const newProductPromises = taggedProducts.map(async (product) => {
-    const newProduct = new Products(product)
-    return newProduct.save()
-  })
+  // const newProductPromises = taggedProducts.map(async (product) => {
+  //   const newProduct = {
+  //     name: product.name,
+  //     img_url: product.img_url,
+  //     tags: product.tags
+  //   }
+  //   const newProduct = new Products(product)
+  //   return newProduct.save()
+  // })
 
 }
 
@@ -38,22 +44,22 @@ const run = async () => {
   const products = await colesScraper.scrapeAllCategories();
   console.log(products)
 
-  const singleTestItems = products.slice(0, 5).map(async (product) => {
-    const tags = await getItemTags(product.name)
-    console.log(tags)
-    return {
-      name: product.name,
-      tags
-    }
-  })
+  // const singleTestItems = products.slice(0, 5).map(async (product) => {
+  //   const tags = await getItemTags(product.name)
+  //   console.log(tags)
+  //   return {
+  //     name: product.name,
+  //     tags
+  //   }
+  // })
 
-  const singleTests = await Promise.all(singleTestItems)
+  // const singleTests = await Promise.all(singleTestItems)
 
-  const bulkTestItems = products.slice(0, 25).map((product) => product.name)
-  const bulkTags = await getBulkItemTags(bulkTestItems)
+  // const bulkTestItems = products.slice(0, 25).map((product) => product.name)
+  // const bulkTags = await getBulkItemTags(bulkTestItems)
 
-  console.log(singleTests)
-  console.log(bulkTags)
+  // console.log(singleTests)
+  // console.log(bulkTags)
 
 }
 

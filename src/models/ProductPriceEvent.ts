@@ -4,6 +4,7 @@ export interface IProductPriceEvent {
   product: Schema.Types.ObjectId;
   price: number;
   discounted_from: number;
+  provider: string;
   create_date: Date;
 }
 
@@ -27,6 +28,10 @@ const schema: Schema<IProductPriceEventDocument> = new Schema({
     type: Number,
     required: true
   },
+  provider: {
+    type: String,
+    required: true
+  },
   create_date: {
     type: Date,
     default: Date.now,
@@ -34,8 +39,8 @@ const schema: Schema<IProductPriceEventDocument> = new Schema({
 })
 
 schema.methods.toJSON = function (): IProductPriceEvent & { id: Types.ObjectId } {
-  const { product, price, discounted_from, create_date, _id: id } = this.toObject() as IProductPriceEventDocument & { _id: Types.ObjectId };
-  return { id, product, price, discounted_from, create_date };
+  const { product, price, discounted_from, provider, create_date, _id: id } = this.toObject() as IProductPriceEventDocument & { _id: Types.ObjectId };
+  return { id, product, price, discounted_from, provider, create_date };
 }
 
 const Product = mongoose.model<IProductPriceEventDocument, IProductPriceEventModel>('Product', schema)

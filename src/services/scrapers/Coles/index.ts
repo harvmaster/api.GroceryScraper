@@ -1,5 +1,5 @@
 import puppeteer from 'puppeteer';
-import { Browser } from 'puppeteer';
+import { Browser, Page } from 'puppeteer';
 import { Scraper } from '../Scraper';
 import RateLimiter from '../../RateLimiter';
 
@@ -16,6 +16,7 @@ const SPEED_LIMIT = 20
 
 class ColesScraper implements Scraper {
 
+  name: string = 'Coles'
   #rateLimit: RateLimiter
 
   constructor () {
@@ -35,7 +36,7 @@ class ColesScraper implements Scraper {
       return { name: category, url }
     }))
 
-    const categories = categoriesUnfiltered.filter((cat) => cat.url !== null && cat.name !== 'Specials')
+    const categories = categoriesUnfiltered.filter((cat) => cat.url !== null && cat.name !== 'Specials').slice(2, 3)
     console.log(categories)
 
     const categoryPromises = categories.map(async (category) => {
@@ -86,25 +87,58 @@ class ColesScraper implements Scraper {
 
       await page.setRequestInterception(true);
       page.on('request', (req) => {
+        // if (req.resourceType() === 'script') return req.abort();
         if (req.resourceType() === 'image' || req.resourceType() === 'script') return req.abort();
         return req.continue();
       });
       
+      await page.evaluateOnNewDocument(() => {
+        // Override lazy loading functionality
+        Object.defineProperty(HTMLImageElement.prototype, 'src', {
+          set(src) {
+            this.setAttribute('src', src);
+          }
+        });
+      });
+
       await page.goto(url)
+      
+      // "<img alt=\"Coles Graze Grass Fed No Added Hormone Beef Mince | 500g\" data-testid=\"product-image\" srcSet=\"/_next/image?url=https%3A%2F%2Fproductimages.coles.com.au%2Fproductimages%2F2%2F2820606.jpg&amp;w=256&amp;q=90 1x, /_next/image?url=https%3A%2F%2Fproductimages.coles.com.au%2Fproductimages%2F2%2F2820606.jpg&amp;w=640&amp;q=90 2x\" src=\"/_next/image?url=https%3A%2F%2Fproductimages.coles.com.au%2Fproductimages%2F2%2F2820606.jpg&amp;w=640&amp;q=90\" decoding=\"async\" data-nimg=\"intrinsic\" style=\"position:absolute;top:0;left:0;bottom:0;right:0;box-sizing:border-box;padding:0;border:none;margin:auto;display:block;width:0;height:0;min-width:100%;max-width:100%;min-height:100%;max-height:100%\" loading=\"lazy\"/>"
       const el = await page.$$('[data-testid="product-tile"]')
       const products = await Promise.all(el.map(async (div) => {
+        // Item price
         const priceValue = await div.$('.price__value')
         const priceTxt = await priceValue?.getProperty('textContent')
         const price = await priceTxt?.jsonValue()
         
+        // Item name
         const titleValue = await div.$('.product__title')
         const titleTxt = await titleValue?.getProperty('textContent')
         const title = await titleTxt?.jsonValue()
 
+        // Item link. This is used to get the item ID from coles
+        const linkValue = await div.$('.product__link')
+        const linkTxt = await linkValue?.getProperty('href')
+        const link = await linkTxt?.jsonValue() as string
+
+        const id = link?.split('-').pop()
+
+        // Get the image. Image is lazy loaded so we get it from the noscript tag
+        const noScriptTag = await div.$('noscript')
+        const imgData = await noScriptTag?.evaluate((el) => {
+          const imgTag = el.innerHTML.match(/<img.*?src="(.*?)"/)
+          return imgTag?.[1]
+        })
+        const imgSrc = imgData?.split('url=')[1]
+        const imgSrcDecoded = decodeURIComponent(imgSrc || '')
+        const img = imgSrcDecoded?.split('&')[0]
+
+        // Price before discount. This doesnt always exist
         const wasElement = await div.$('.price__was')
         const wasTxt = await wasElement?.getProperty('textContent')
         const was = await wasTxt?.jsonValue()
 
+        // These 2 can be removed
         // Replace every non-digit character with an empty string
         const priceDigits = price?.replace(/\D/g, '') || '0'
         const priceNum = (parseFloat(priceDigits)/100)
@@ -119,7 +153,9 @@ class ColesScraper implements Scraper {
           name: title,
           price: priceNum,
           discounted_from: wasNum || priceNum,
-          img_url: undefined
+          img_url: img,
+          supplier_product_url: link,
+          supplier_product_id: id
         }
       }))
 
@@ -127,6 +163,24 @@ class ColesScraper implements Scraper {
     })
 
     return products
+  }
+
+  async autoScroll(page: Page) {
+    await page.evaluate(async () => {
+      await new Promise((resolve, reject) => {
+        var totalHeight = 0;
+        var distance = 100;
+        var timer = setInterval(() => {
+          var scrollHeight = document.body.scrollHeight;
+          window.scrollBy(0, distance);
+          totalHeight += distance;
+          if (totalHeight >= scrollHeight) {
+            clearInterval(timer);
+            resolve(null);
+          }
+        }, 50);
+      });
+    });
   }
 }
 

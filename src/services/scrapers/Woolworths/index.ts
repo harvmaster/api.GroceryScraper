@@ -1,6 +1,5 @@
 import puppeteer from 'puppeteer';
-import { Browser, Page } from 'puppeteer';
-import axios from 'axios'
+import { Page } from 'puppeteer';
 import { Scraper } from '../Scraper';
 import RateLimiter from '../../RateLimiter';
 
@@ -68,6 +67,8 @@ const WOOLWORTHS_URL = 'https://www.woolworths.com.au'
 const SPEED_LIMIT = 20
 
 export class WoolworthsScraper implements Scraper {
+  
+  name: string = 'Woolworths'
   #rateLimit: RateLimiter
 
   constructor () {
