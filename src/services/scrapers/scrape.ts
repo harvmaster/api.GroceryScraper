@@ -35,11 +35,6 @@ const scrape = async (scraper: Scraper) => {
   const productsWithSimilar = matches.filter((match) => match.similarProducts.length > 0)
   const productsWithoutSimilar = matches.filter((match) => match.similarProducts.length === 0).map(product => product.product)
 
-  // If there are no similar products, create a new product
-  // if (!similarMatches.length) {
-  //   createProduct()
-  // }
-
   // If there are similar products, send them to chatGPT to decide what the best match is
   const chatGPTMatchesPromises = productsWithSimilar.map(async (productWithSimilar) => matchProductWithGPT(productWithSimilar.product, productWithSimilar.similarProducts))
   const chatGPTMatches = await Promise.all(chatGPTMatchesPromises)
@@ -48,31 +43,37 @@ const scrape = async (scraper: Scraper) => {
   const matchedProducts = chatGPTMatches.filter((match) => match.match)
   productsWithoutSimilar.push(...chatGPTMatches.filter((match) => !match.match).map((match) => match.product))
 
-  
-
-  // Get the new products and add them to the database
-  const toCreateProducts = scrapedProducts.filter((product) => !existingProducts.find((existingProduct) => existingProduct.name === product.name))
-  
+  // Products without a match are tagged and then added to the database
   // Add tags to the new products
-  const tags = await getBulkItemTags(toCreateProducts.map((product) => product.name))
+  const tags = await getBulkItemTags(productsWithoutSimilar.map((product) => product.name))
   const taggedProducts = Object.keys(tags).map((key) => {
-    const product = toCreateProducts.find((product) => product.name === key)
+    const product = productsWithoutSimilar.find((product) => product.name === key)
     if (product) {
       product.tags = tags[key]
     }
     return product
   })
+  // Create the new products
+  const newProductPromises = taggedProducts.map(async (product) => {
+    const newProduct = new Products(product)
+    return newProduct.save()
+  })
+  const newProducts = await Promise.all(newProductPromises)
 
-  // Save new products to the database
-  // const newProductPromises = taggedProducts.map(async (product) => {
-  //   const newProduct = {
-  //     name: product.name,
-  //     img_url: product.img_url,
-  //     tags: product.tags
-  //   }
-  //   const newProduct = new Products(product)
-  //   return newProduct.save()
-  // })
+  // Create the new product listings
+  const newProductListingPromises = taggedProducts.map(async (product) => {
+    const newProductListing = new ProductListings({
+      name: product.name,
+      img_url: product.img_url,
+      supplier_product_id: product.supplier_product_id,
+      supplier_name: scraper.name,
+      tags: product.tags
+    })
+    return newProductListing.save()
+  })
+  const newProductListings = await Promise.all(newProductListingPromises)
+
+  // Create Product Price Event
 
 }
 
