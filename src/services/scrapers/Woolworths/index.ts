@@ -148,8 +148,8 @@ export class WoolworthsScraper implements Scraper {
     const productRes: Product[]= []
     for (let i = 1; i <= numPages; i++) {
       body.pageNumber = i
-      body.location = category.location + `?pageNumber=${i}`
-      body.url = category.url + `?pageNumber=${i}`
+      body.location = `${category.location}?pageNumber=${i}`;
+    body.url = `${category.url}?pageNumber=${i}`;
 
       const products = await this.scrapeURL(page, body)
       productRes.push(...products)

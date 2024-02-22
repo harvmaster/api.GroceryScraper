@@ -12,8 +12,12 @@ interface GPTMatch {
 }
 
 export const matchProductWithGPT = async (product: Product, similar: ProductCrucialInfo[] ): Promise<GPTMatch> => {
-  const response = await gpt.query(product.name)
-  return response
+//   const response = await gpt.query(product.name)
+//   return response
+  return {
+    product,
+    match: similar[0]
+  }
 }
 
 export default matchProductWithGPT;

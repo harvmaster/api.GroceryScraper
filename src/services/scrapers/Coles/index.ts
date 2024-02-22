@@ -15,7 +15,7 @@ class ColesScraper implements Scraper {
     this.#rateLimit = new RateLimiter(SPEED_LIMIT, 5)
   }
 
-  async scrapeAllCategories () {
+  async scrapeAllCategories (): Promise<Product[]> {
     const browser = await puppeteer.launch()
     const page = await browser.newPage()
     await page.goto(COLES_URL)
@@ -43,7 +43,7 @@ class ColesScraper implements Scraper {
     return products
   }
 
-  async scrapeCategory (browser: Browser, category_url: string) {
+  async scrapeCategory (browser: Browser, category_url: string): Promise<Product[]> {
     // const browser = await puppeteer.launch()
     const page = await browser.newPage()
     await page.goto(category_url)
@@ -79,23 +79,12 @@ class ColesScraper implements Scraper {
 
       await page.setRequestInterception(true);
       page.on('request', (req) => {
-        // if (req.resourceType() === 'script') return req.abort();
         if (req.resourceType() === 'image' || req.resourceType() === 'script') return req.abort();
         return req.continue();
-      });
-      
-      await page.evaluateOnNewDocument(() => {
-        // Override lazy loading functionality
-        Object.defineProperty(HTMLImageElement.prototype, 'src', {
-          set(src) {
-            this.setAttribute('src', src);
-          }
-        });
       });
 
       await page.goto(url)
       
-      // "<img alt=\"Coles Graze Grass Fed No Added Hormone Beef Mince | 500g\" data-testid=\"product-image\" srcSet=\"/_next/image?url=https%3A%2F%2Fproductimages.coles.com.au%2Fproductimages%2F2%2F2820606.jpg&amp;w=256&amp;q=90 1x, /_next/image?url=https%3A%2F%2Fproductimages.coles.com.au%2Fproductimages%2F2%2F2820606.jpg&amp;w=640&amp;q=90 2x\" src=\"/_next/image?url=https%3A%2F%2Fproductimages.coles.com.au%2Fproductimages%2F2%2F2820606.jpg&amp;w=640&amp;q=90\" decoding=\"async\" data-nimg=\"intrinsic\" style=\"position:absolute;top:0;left:0;bottom:0;right:0;box-sizing:border-box;padding:0;border:none;margin:auto;display:block;width:0;height:0;min-width:100%;max-width:100%;min-height:100%;max-height:100%\" loading=\"lazy\"/>"
       const el = await page.$$('[data-testid="product-tile"]')
       const products = await Promise.all(el.map(async (div) => {
         // Item price
