@@ -1,5 +1,7 @@
 import puppeteer from 'puppeteer';
 import { Browser, Page } from 'puppeteer';
+import axios from 'axios'
+
 import { Scraper, Product } from '../Scraper';
 import RateLimiter from '../../RateLimiter';
 
@@ -28,7 +30,8 @@ class ColesScraper implements Scraper {
       return { name: category, url }
     }))
 
-    const categories = categoriesUnfiltered.filter((cat) => cat.url !== null && cat.name !== 'Specials').slice(2, 3)
+    const categories = categoriesUnfiltered.filter((cat) => cat.url !== null && cat.name !== 'Specials')
+    // const categories = categoriesUnfiltered.filter((cat) => cat.url !== null && cat.name !== 'Specials').slice(2, 3)
     console.log(categories)
 
     const categoryPromises = categories.map(async (category) => {
@@ -40,7 +43,14 @@ class ColesScraper implements Scraper {
     const products = productsByCategory.flat()
 
     await browser.close()
-    return products
+
+    console.log(`Filling in barcodes for ${products.length} products`)
+    const productsWithBarcodes = await Promise.all(products.map(async (product) => {
+      const barcode = await this.getBarcode(product)
+      return { ...product, barcode }
+    }))
+
+    return productsWithBarcodes
   }
 
   async scrapeCategory (browser: Browser, category_url: string): Promise<Product[]> {
@@ -144,6 +154,16 @@ class ColesScraper implements Scraper {
     })
 
     return products
+  }
+
+  async getBarcode (product: Product): Promise<string> {
+    try {
+      const { data } = await axios.get(`https://barcodes.groceryscraper.mc.hzuccon.com/barcode?product=${product.supplier_product_id}`)
+      return data
+    } catch (err) {
+      // console.error(err)
+      return ''
+    }
   }
 }
 
