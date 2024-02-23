@@ -2,6 +2,7 @@ import mongoose, { Document, Model, Schema, Types } from 'mongoose'
 
 export interface IProduct {
   name: string;
+  barcode?: string;
   img_url: string;
   tags: string[];
   description: string;
@@ -18,6 +19,11 @@ const schema: Schema<IProductDocument> = new Schema({
   name: {
     type: String,
     required: true,
+    index: true,
+  },
+  barcode: {
+    type: String,
+    required: false,
     index: true,
   },
   img_url: {
@@ -39,8 +45,8 @@ const schema: Schema<IProductDocument> = new Schema({
 })
 
 schema.methods.toJSON = function (): IProduct & { id: Types.ObjectId } {
-  const { name, img_url, tags, description, create_date, _id: id } = this.toObject() as IProductDocument & { _id: Types.ObjectId };
-  return { id, name, img_url, tags, description, create_date };
+  const { name, barcode, img_url, tags, description, create_date, _id: id } = this.toObject() as IProductDocument & { _id: Types.ObjectId };
+  return { id, name, barcode, img_url, tags, description, create_date };
 }
 
 const Product = mongoose.model<IProductDocument, IProductModel>('Product', schema)
