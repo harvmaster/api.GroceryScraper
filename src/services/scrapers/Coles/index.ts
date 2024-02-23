@@ -83,7 +83,7 @@ class ColesScraper implements Scraper {
   }
 
   async scrapeURL (browser: Browser, url: string): Promise<Product[]> {
-    const products = await this.#rateLimit.add<Product[]>(async () => {
+    const products = await this.#rateLimit.add<Product[]>(async (): Promise<Product[]> => {
       console.log('Scraping', url)
       const page = await browser.newPage()
 
@@ -145,8 +145,9 @@ class ColesScraper implements Scraper {
           price: priceNum,
           discounted_from: wasNum || priceNum,
           img_url: img,
-          supplier_product_url: link,
-          supplier_product_id: id
+          retailer_name: this.name,
+          retailer_product_url: link,
+          retailer_product_id: id
         }
       }))
 
@@ -158,7 +159,7 @@ class ColesScraper implements Scraper {
 
   async getBarcode (product: Product): Promise<string> {
     try {
-      const { data } = await axios.get(`https://barcodes.groceryscraper.mc.hzuccon.com/barcode?product=${product.supplier_product_id}`)
+      const { data } = await axios.get(`https://barcodes.groceryscraper.mc.hzuccon.com/barcode?product=${product.retailer_product_id}`)
       return data
     } catch (err) {
       // console.error(err)
