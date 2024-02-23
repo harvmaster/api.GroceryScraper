@@ -174,8 +174,9 @@ export class WoolworthsScraper implements Scraper {
         price: product.Price || product.InstorePrice,
         discounted_from: product.WasPrice,
         img_url: product.DetailsImagePaths[0],
-        supplier_product_url: '', // Add the missing property
-        supplier_product_id: '' // Add the missing property
+        retailer_name: this.name,
+        retailer_product_url: '', // Add the missing property
+        retailer_product_id: '' // Add the missing property
       };
     });
 
