@@ -87,8 +87,10 @@ const createNewProductListings = async (taggedProducts, scraper) => {
       name: product.name,
       img_url: product.img_url,
       supplier_product_id: product.supplier_product_id,
-      supplier_name: scraper.name,
-      tags: product.tags
+      supplier_product_url: product.supplier_product_url,
+      tags: product.tags,
+
+      supplier_name: scraper.name
     });
     return newProductListing.save();
   });

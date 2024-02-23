@@ -4,6 +4,7 @@ export interface IProductListing {
   product_id: Schema.Types.ObjectId;
   supplier: string;
   supplier_product_id: string;
+  supplier_product_url: string;
   img_url: string;
   create_date: Date;
 }
@@ -29,6 +30,10 @@ const schema: Schema<IProductListingDocument> = new Schema({
     required: true,
     index: true,
   },
+  supplier_product_url: {
+    type: String,
+    required: false
+  },
   img_url: {
     type: String,
     required: false
@@ -40,8 +45,8 @@ const schema: Schema<IProductListingDocument> = new Schema({
 })
 
 schema.methods.toJSON = function (): IProductListing & { id: Types.ObjectId } {
-  const { product_id, supplier, supplier_product_id, img_url, create_date, _id: id } = this.toObject() as IProductListingDocument & { _id: Types.ObjectId };
-  return { id, product_id, supplier, supplier_product_id, img_url, create_date };
+  const { product_id, supplier, supplier_product_id, supplier_product_url, img_url, create_date, _id: id } = this.toObject() as IProductListingDocument & { _id: Types.ObjectId };
+  return { id, product_id, supplier, supplier_product_id, supplier_product_url, img_url, create_date };
 }
 
 const ProductListing = mongoose.model<IProductListingDocument, IProductListingModel>('ProductListing', schema)
