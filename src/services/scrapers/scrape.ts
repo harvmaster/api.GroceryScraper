@@ -136,29 +136,3 @@ export const scrape = async (scraper: Scraper) => {
     priceEvents
   }
 }
-
-const run = async () => {
-  const colesScraper = new ColesScraper();
-  const products = await colesScraper.scrapeAllCategories();
-  console.log(products)
-
-  // const singleTestItems = products.slice(0, 5).map(async (product) => {
-  //   const tags = await getItemTags(product.name)
-  //   console.log(tags)
-  //   return {
-  //     name: product.name,
-  //     tags
-  //   }
-  // })
-
-  // const singleTests = await Promise.all(singleTestItems)
-
-  // const bulkTestItems = products.slice(0, 25).map((product) => product.name)
-  // const bulkTags = await getBulkItemTags(bulkTestItems)
-
-  // console.log(singleTests)
-  // console.log(bulkTags)
-
-}
-
-// run()
