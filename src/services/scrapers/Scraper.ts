@@ -6,6 +6,7 @@ export interface Product {
   retailer_name: string;
   retailer_product_url: string
   retailer_product_id: string
+  barcode? : string
   tags?: string[]
 }
 
