@@ -2,13 +2,9 @@ import Products from '../../models/Product';
 import { IProductDocument } from '../../models/Product';
 
 import PriceEvents from '../../models/ProductPriceEvent';
-import { IProductPriceEventDocument } from '../../models/ProductPriceEvent';
 
 import { Scraper, Product } from './Scraper';
-import ColesScraper from './Coles';
 import { getItemTags, getBulkItemTags } from '../ItemTagger';
-import getProductSimilarity from './getProductSimilarity';
-import matchProductWithGPT from './matchProductWithGPT';
 
 interface ProductMatch {
   product: Product;
