@@ -4,6 +4,7 @@
   "description": "Scrape grocers and create a rest API to query them",
   "main": "index.js",
   "scripts": {
+    "start": "ts-node-dev src/server.ts",
     "test": "echo \"Error: no test specified\" && exit 1",
     "scrape": "ts-node-dev src/services/scrapers/scrape.ts",
     "woolworths": "ts-node-dev src/services/scrapers/Woolworths/test.ts"

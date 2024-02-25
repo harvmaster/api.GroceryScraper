@@ -198,3 +198,5 @@ export class WoolworthsScraper implements Scraper {
     }, request, WOOLWORTHS_API_ENDPOINT)
   }
 }
+
+export default WoolworthsScraper;

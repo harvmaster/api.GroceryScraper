@@ -18,7 +18,13 @@ class ColesScraper implements Scraper {
   }
 
   async scrapeAllCategories (): Promise<Product[]> {
-    const browser = await puppeteer.launch()
+    const browser = await puppeteer.launch({
+      executablePath: '/usr/bin/google-chrome-stable',
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox'
+      ]
+    })
     const page = await browser.newPage()
     await page.goto(COLES_URL)
 
@@ -30,8 +36,8 @@ class ColesScraper implements Scraper {
       return { name: category, url }
     }))
 
-    const categories = categoriesUnfiltered.filter((cat) => cat.url !== null && cat.name !== 'Specials')
-    // const categories = categoriesUnfiltered.filter((cat) => cat.url !== null && cat.name !== 'Specials').slice(2, 3)
+    // const categories = categoriesUnfiltered.filter((cat) => cat.url !== null && cat.name !== 'Specials')
+    const categories = categoriesUnfiltered.filter((cat) => cat.url !== null && cat.name !== 'Specials').slice(5, 6)
     console.log(categories)
 
     const categoryPromises = categories.map(async (category) => {

@@ -39,6 +39,42 @@ export const getItemTags = async (itemName: string) => {
 }
 
 export const getBulkItemTags = async (itemNames: string[]) => {
+  // split itemnames into lists of 20
+  const itemNamesLists = []
+  let currentList = []
+  for (let i = 0; i < itemNames.length; i++) {
+    currentList.push(itemNames[i])
+    if (currentList.length === 20) {
+      itemNamesLists.push(currentList)
+      currentList = []
+    }
+  }
+  if (currentList.length > 0) {
+    itemNamesLists.push(currentList)
+  }
+
+  const tagPromises = []
+  for (let i = 0; i < itemNamesLists.length; i++) {
+    const itemNamesList = itemNamesLists[i]
+    const itemTags = getTagsForItemList(itemNamesList)
+    tagPromises.push(itemTags)
+  }
+
+  const tagsList = await Promise.all(tagPromises).then((tagLists) => {
+    return tagLists.flat()
+  })
+
+  const tags = {}
+  tagsList.forEach((tagList) => {
+    Object.keys(tagList).forEach((itemName) => {
+      tags[itemName] = tagList[itemName]
+    })
+  })
+
+  return tags
+}
+
+export const getTagsForItemList = async (itemNames: string[]) => {
   const openaiClient = new OpenAI({
     apiKey: openaiApiKey,
   })
@@ -65,7 +101,7 @@ export const getBulkItemTags = async (itemNames: string[]) => {
   });
   try {
     const json = JSON.parse(response.choices[0].message.content);
-    console.log(json)
+    // console.log(json)
     return json.items
   } catch (e) {
     console.error(e)

@@ -69,10 +69,11 @@ const addProductIds = (products: Product[], existingProducts: IProductDocument[]
 
 const addProductTags = async (products: Product[]): Promise<(Product & { tags: string[] })[]> => {
   const productTags = await getBulkItemTags(products.map((product) => product.name))
+  console.log('productTags', productTags)
   return products.map((product, index) => {
     return {
       ...product,
-      tags: productTags[index]
+      tags: productTags[product.name]
     }
   })
 }
@@ -80,6 +81,7 @@ const addProductTags = async (products: Product[]): Promise<(Product & { tags: s
 const createManyProducts = async (products: Product[]) => {
   // add tags to the new items
   const productsWithTags = await addProductTags(products)
+  console.log(`There are ${productsWithTags.filter((product) => product.tags?.length > 0).length} products with tags`)
   const productsToSave = productsWithTags.map((product) => {
     return {
       retailer_product_id: product.retailer_product_id,
@@ -109,18 +111,25 @@ const createPriceEvents = async (products: (Product & { id: string })[]) => {
   return PriceEvents.create(priceEvents)
 }
 
-const scrape = async (scraper: Scraper) => {
+export const scrape = async (scraper: Scraper) => {
+  console.log('Scraping: ', scraper.name)
   const scrapedProducts = await scraper.scrapeAllCategories();
+  console.log(`Scraped ${scrapedProducts.length} products from ${scraper.name}`)
   const databaseProducts = await getExistingProducts(scrapedProducts);
+  console.log(`Found ${databaseProducts.length} existing products in the database`)
   const existingProducts = addProductIds(scrapedProducts, databaseProducts);
   
   // Save the new products to the DB
   const newProducts = filterToNewProducts(scrapedProducts, databaseProducts);
+  console.log(`Found ${newProducts.length} new products`)
   const createdProducts = await createManyProducts(newProducts)
+  console.log(`Created ${createdProducts.length} new products`)
   const formattedCreatedProducts = addProductIds(newProducts, createdProducts)
+  console.log(`Formatted ${formattedCreatedProducts.length} new products`)
 
   const allProducts = [...existingProducts, ...formattedCreatedProducts]
   const priceEvents = await createPriceEvents(allProducts)
+  console.log(`Created ${priceEvents.length} price events`)
 
   return {
     products: allProducts,
@@ -152,4 +161,4 @@ const run = async () => {
 
 }
 
-run()
+// run()
