@@ -19,6 +19,7 @@ class ColesScraper implements Scraper {
 
   async scrapeAllCategories (): Promise<Product[]> {
     const browser = await puppeteer.launch({
+      headless: true,
       executablePath: '/usr/bin/google-chrome-stable',
       args: [
         '--no-sandbox',
@@ -102,7 +103,7 @@ class ColesScraper implements Scraper {
       await page.goto(url)
       
       const el = await page.$$('[data-testid="product-tile"]')
-      const products = await Promise.all(el.map(async (div) => {
+      const products: Product[] = await Promise.all(el.map(async (div) => {
         // Item price
         const priceValue = await div.$('.price__value')
         const priceTxt = await priceValue?.getProperty('textContent')
@@ -122,13 +123,17 @@ class ColesScraper implements Scraper {
 
         // Get the image. Image is lazy loaded so we get it from the noscript tag
         const noScriptTag = await div.$('noscript')
+        console.log(noScriptTag)
         const imgData = await noScriptTag?.evaluate((el) => {
           const imgTag = el.innerHTML.match(/<img.*?src="(.*?)"/)
           return imgTag?.[1]
         })
+        console.log(imgData)
         const imgSrc = imgData?.split('url=')[1]
         const imgSrcDecoded = decodeURIComponent(imgSrc || '')
         const img = imgSrcDecoded?.split('&')[0]
+
+        const imgElement = await div.$('.product__image')
 
         // Price before discount. This doesnt always exist
         const wasElement = await div.$('.price__was')

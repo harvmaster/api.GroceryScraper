@@ -1,4 +1,5 @@
 import OpenAI from 'openai'
+import fs from 'fs'
 
 import config from '../../../config'
 const openaiApiKey = config.openaiApiKey
@@ -105,6 +106,14 @@ export const getTagsForItemList = async (itemNames: string[]) => {
     return json.items
   } catch (e) {
     console.error(e)
+    const errorFile = `error-${Date.now()}.json`
+    const errorData = {
+      error: e,
+      system,
+      input: `["${itemNames.join('", "')}"]`,
+      response: response.choices[0].message.content
+    }
+    fs.writeFileSync(errorFile, JSON.stringify(errorData))
     return []
   }
 }

@@ -48,6 +48,9 @@ const getScrapedDocuments = (scrapedProducts: Product[], existingProducts: IProd
   }).filter((product) => product !== null)
 }
 
+/*
+  Returns the list of products with the id field filled in with the id of the product in the local database
+*/
 const addProductIds = (products: Product[], existingProducts: IProductDocument[]): (Product & { id: string })[] => {
   const existingProductMap = existingProducts.reduce((acc, product) => {
     acc[product.retailer_product_id] = product;
@@ -97,7 +100,7 @@ const createManyProducts = async (products: Product[]) => {
 const createPriceEvents = async (products: (Product & { id: string })[]) => {
   const priceEvents = products.map((product) => {
     return {
-      product_id: product.id,
+      product: product.id,
       price: product.price,
       discounted_from: product.discounted_from,
       create_date: new Date()
@@ -110,6 +113,8 @@ const createPriceEvents = async (products: (Product & { id: string })[]) => {
 export const scrape = async (scraper: Scraper) => {
   console.log('Scraping: ', scraper.name)
   const scrapedProducts = await scraper.scrapeAllCategories();
+
+  return scrapedProducts
   console.log(`Scraped ${scrapedProducts.length} products from ${scraper.name}`)
   const databaseProducts = await getExistingProducts(scrapedProducts);
   console.log(`Found ${databaseProducts.length} existing products in the database`)

@@ -174,9 +174,12 @@ export class WoolworthsScraper implements Scraper {
         price: product.Price || product.InstorePrice,
         discounted_from: product.WasPrice,
         img_url: product.DetailsImagePaths[0],
+
         retailer_name: this.name,
-        retailer_product_url: '', // Add the missing property
-        retailer_product_id: '' // Add the missing property
+        retailer_product_url: `https://www.woolworths.com.au/shop/productdetails/${product.Stockcode}/${product.UrlFriendlyName}`,
+        retailer_product_id: product.Stockcode,
+
+        barcode: product.Barcode,
       };
     });
 
