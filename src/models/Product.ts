@@ -12,7 +12,7 @@ export interface IProduct {
 }
 
 export interface IProductDocument extends IProduct, Document {
-  toJSON(): IProduct & { id: Types.ObjectId };
+  toJSONData(): IProduct & { id: Types.ObjectId };
 }
 
 export interface IProductModel extends Model<IProductDocument> {}
@@ -56,7 +56,7 @@ const schema: Schema<IProductDocument> = new Schema({
   }
 })
 
-schema.methods.toJSON = function (): IProduct & { id: Types.ObjectId } {
+schema.methods.toJSONData = function (): IProduct & { id: Types.ObjectId } {
   const { retailer_product_id, retailer_product_url, retailer_name, name, barcode, img_url, tags, create_date, _id: id } = this.toObject() as IProductDocument & { _id: Types.ObjectId };
   return { retailer_product_id, retailer_product_url, retailer_name, id, name, barcode, img_url, tags, create_date };
 }
