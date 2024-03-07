@@ -37,8 +37,8 @@ class ColesScraper implements Scraper {
       return { name: category, url }
     }))
 
-    // const categories = categoriesUnfiltered.filter((cat) => cat.url !== null && cat.name !== 'Specials')
-    const categories = categoriesUnfiltered.filter((cat) => cat.url !== null && cat.name !== 'Specials').slice(5, 6)
+    const categories = categoriesUnfiltered.filter((cat) => cat.url !== null && cat.name !== 'Specials')
+    // const categories = categoriesUnfiltered.filter((cat) => cat.url !== null && cat.name !== 'Specials').slice(5, 6)
     console.log(categories)
 
     const categoryPromises = categories.map(async (category) => {
@@ -102,25 +102,32 @@ class ColesScraper implements Scraper {
 
       await page.goto(url)
 
-      const data = await page.evaluate(() => {
-        return eval('this.colDataState.b.data.shop.tiles')
-      })
-
-      const tiles = data.filter(tile => tile._type == 'PRODUCT')
-
-      const COLES_IMAGE_BASE_URL = 'https://www.coles.com.au/_next/image?url=https://productimages.coles.com.au/productimages'
-      const productList: Product[] = tiles.map((product: any) => {
-        const productUrl = `${product.brand}-${product.name}-${product.size}-${product.id}`.toLocaleLowerCase().replace(/ /g, '-')
-        return {
-          name: `${product.brand} ${product.name} | ${product.size}`,
-          price: product.pricing.now,
-          discounted_from: product.pricing.was || product.pricing.now,
-          img_url: `${COLES_IMAGE_BASE_URL}${product.imageUris[0]?.uri}&w=256&q=90`,
-          retailer_name: 'Coles',
-          retailer_product_url: `https://www.coles.com.au/product/${productUrl}`,
-          retailer_product_id: product.id
-        }
-      })
+      let productList: Product[] = []
+      try {
+        const data = await page.evaluate(() => {
+          return eval('this.colDataState.b.data.shop.tiles')
+        })
+  
+        const tiles = data.filter(tile => tile._type == 'PRODUCT')
+  
+        const COLES_IMAGE_BASE_URL = 'https://www.coles.com.au/_next/image?url=https://productimages.coles.com.au/productimages'
+        productList = tiles.map((product: any) => {
+          const productUrl = `${product.brand}-${product.name}-${product.size}-${product.id}`.toLocaleLowerCase().replace(/ /g, '-')
+          // if (!product.pricing || !product.pricing.now) console.log(product)
+          return {
+            name: `${product.brand} ${product.name} | ${product.size}`,
+            price: product.pricing?.now || 0,
+            discounted_from: product.pricing?.was || product.pricing?.now || 0,
+            img_url: `${COLES_IMAGE_BASE_URL}${product.imageUris[0]?.uri}&w=256&q=90`,
+            retailer_name: 'Coles',
+            retailer_product_url: `https://www.coles.com.au/product/${productUrl}`,
+            retailer_product_id: product.id
+          }
+        })
+      } catch (err) {
+        console.error(err)
+        console.log(`${url} failed to scrape`)
+      }
 
       return productList
     })

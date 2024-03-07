@@ -113,8 +113,6 @@ const createPriceEvents = async (products: (Product & { id: string })[]) => {
 export const scrape = async (scraper: Scraper) => {
   console.log('Scraping: ', scraper.name)
   const scrapedProducts = await scraper.scrapeAllCategories();
-
-  return scrapedProducts
   console.log(`Scraped ${scrapedProducts.length} products from ${scraper.name}`)
   const databaseProducts = await getExistingProducts(scrapedProducts);
   console.log(`Found ${databaseProducts.length} existing products in the database`)
