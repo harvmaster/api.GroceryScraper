@@ -11,7 +11,7 @@ type SchemaStatics = {
 }
 
 type SchemaDocument<T> = Document<Types.ObjectId, T, SchemaProps>
-type SchemaModel<T> = Model<SchemaProps, {}, SchemaMethods> & SchemaStatics
+type SchemaModel = Model<SchemaProps, {}, SchemaMethods> & SchemaStatics
 
 const schema = new Schema({
   retailer_product_id: { // We will set this to a sha256 hash of the product name if the retailer does not provide an ID
@@ -69,7 +69,7 @@ schema.methods.toJSONData = function (): ProductProps {
   return { retailer_product_id, retailer_product_url, retailer_name, id, name, barcode, img_url, tags, create_date };
 }
 
-const Product = mongoose.model<SchemaProps, SchemaModel<SchemaMethods>>('Product', schema)
+const Product = mongoose.model<SchemaProps, SchemaModel>('Product', schema)
 
 export type ProductInput = SchemaInput
 export type ProductProps = SchemaProps
