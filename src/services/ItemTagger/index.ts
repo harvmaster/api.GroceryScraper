@@ -4,7 +4,13 @@ import fs from 'fs'
 import config from '../../../config'
 const openaiApiKey = config.openaiApiKey
 
-export const getItemTags = async (itemName: string) => {
+import RateLimiter from './RateLimiter'
+const rateLimit = new RateLimiter(15, 60)
+
+type ItemTags = string[]
+type ItemTagMap = { [itemName: string]: ItemTags }
+
+export const getItemTags = async (itemName: string): Promise<ItemTags> => {
   const openaiClient = new OpenAI({
     apiKey: openaiApiKey,
   })
@@ -39,7 +45,7 @@ export const getItemTags = async (itemName: string) => {
   }
 }
 
-export const getBulkItemTags = async (itemNames: string[]) => {
+export const getBulkItemTags = async (itemNames: string[]): Promise<ItemTagMap> => {
   // split itemnames into lists of 20
   const itemNamesLists = []
   let currentList = []
@@ -57,6 +63,7 @@ export const getBulkItemTags = async (itemNames: string[]) => {
   const tagPromises = []
   for (let i = 0; i < itemNamesLists.length; i++) {
     const itemNamesList = itemNamesLists[i]
+    await rateLimit.consume()
     const itemTags = getTagsForItemList(itemNamesList)
     tagPromises.push(itemTags)
   }
@@ -75,7 +82,7 @@ export const getBulkItemTags = async (itemNames: string[]) => {
   return tags
 }
 
-export const getTagsForItemList = async (itemNames: string[]) => {
+export const getTagsForItemList = async (itemNames: string[]): Promise<ItemTagMap> => {
   const openaiClient = new OpenAI({
     apiKey: openaiApiKey,
   })
@@ -114,7 +121,7 @@ export const getTagsForItemList = async (itemNames: string[]) => {
       response: response.choices[0].message.content
     }
     fs.writeFileSync(errorFile, JSON.stringify(errorData))
-    return []
+    return {}
   }
 }
 
