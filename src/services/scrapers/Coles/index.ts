@@ -96,73 +96,99 @@ class ColesScraper implements Scraper {
 
       await page.setRequestInterception(true);
       page.on('request', (req) => {
-        if (req.resourceType() === 'image' || req.resourceType() === 'script') return req.abort();
+        if (req.resourceType() === 'image') return req.abort();
+        // if (req.resourceType() === 'image' || req.resourceType() === 'script') return req.abort();
         return req.continue();
       });
 
       await page.goto(url)
-      
-      const el = await page.$$('[data-testid="product-tile"]')
-      const products: Product[] = await Promise.all(el.map(async (div) => {
-        // Item price
-        const priceValue = await div.$('.price__value')
-        const priceTxt = await priceValue?.getProperty('textContent')
-        const price = await priceTxt?.jsonValue()
-        
-        // Item name
-        const titleValue = await div.$('.product__title')
-        const titleTxt = await titleValue?.getProperty('textContent')
-        const title = await titleTxt?.jsonValue()
 
-        // Item link. This is used to get the item ID from coles
-        const linkValue = await div.$('.product__link')
-        const linkTxt = await linkValue?.getProperty('href')
-        const link = await linkTxt?.jsonValue() as string
+      //
+      const data = await page.evaluate(() => {
+        return eval('this.colDataState.b.data.shop.tiles')
+      })
 
-        const id = link?.split('-').pop()
+      console.log(data)
+      const tiles = data.filter(tile => tile._type == 'PRODUCT')
 
-        // Get the image. Image is lazy loaded so we get it from the noscript tag
-        const noScriptTag = await div.$('noscript')
-        console.log(noScriptTag)
-        const imgData = await noScriptTag?.evaluate((el) => {
-          const imgTag = el.innerHTML.match(/<img.*?src="(.*?)"/)
-          return imgTag?.[1]
-        })
-        console.log(imgData)
-        const imgSrc = imgData?.split('url=')[1]
-        const imgSrcDecoded = decodeURIComponent(imgSrc || '')
-        const img = imgSrcDecoded?.split('&')[0]
-
-        const imgElement = await div.$('.product__image')
-
-        // Price before discount. This doesnt always exist
-        const wasElement = await div.$('.price__was')
-        const wasTxt = await wasElement?.getProperty('textContent')
-        const was = await wasTxt?.jsonValue()
-
-        // These 2 can be removed
-        // Replace every non-digit character with an empty string
-        const priceDigits = price?.replace(/\D/g, '') || '0'
-        const priceNum = (parseFloat(priceDigits)/100)
-        const priceNumFixed = priceNum?.toFixed(2)
-
-        // Replace every non-digit character with an empty string
-        const wasDigits = was?.replace(/\D/g, '') || '0'
-        const wasNum = (parseFloat(wasDigits)/100)
-        const wasNumFixed = wasNum?.toFixed(2)
-
+      const COLES_IMAGE_BASE_URL = 'https://www.coles.com.au/_next/image?url=https://productimages.coles.com.au/productimages'
+      const productList: Product[] = tiles.map((product: any) => {
+        const productUrl = `${product.brand}-${product.name}-${product.size}-${product.id}`.toLocaleLowerCase().replace(/ /g, '-')
         return {
-          name: title,
-          price: priceNum,
-          discounted_from: wasNum || priceNum,
-          img_url: img,
-          retailer_name: this.name,
-          retailer_product_url: link,
-          retailer_product_id: id
+          name: `${product.brand} ${product.name} | ${product.size}`,
+          price: product.pricing.now,
+          discounted_from: product.pricing.was || product.pricing.now,
+          img_url: `${COLES_IMAGE_BASE_URL}${product.imageUris[0]?.uri}&w=256&q=90`,
+          retailer_name: 'Coles',
+          retailer_product_url: `https://www.coles.com.au/product/${productUrl}`,
+          retailer_product_id: product.id
         }
-      }))
+      })
+      //
 
-      return products
+      return productList
+      
+    //   const el = await page.$$('[data-testid="product-tile"]')
+    //   const products: Product[] = await Promise.all(el.map(async (div) => {
+    //     // Item price
+    //     const priceValue = await div.$('.price__value')
+    //     const priceTxt = await priceValue?.getProperty('textContent')
+    //     const price = await priceTxt?.jsonValue()
+        
+    //     // Item name
+    //     const titleValue = await div.$('.product__title')
+    //     const titleTxt = await titleValue?.getProperty('textContent')
+    //     const title = await titleTxt?.jsonValue()
+
+    //     // Item link. This is used to get the item ID from coles
+    //     const linkValue = await div.$('.product__link')
+    //     const linkTxt = await linkValue?.getProperty('href')
+    //     const link = await linkTxt?.jsonValue() as string
+
+    //     const id = link?.split('-').pop()
+
+    //     // Get the image. Image is lazy loaded so we get it from the noscript tag
+    //     const noScriptTag = await div.$('noscript')
+    //     console.log(noScriptTag)
+    //     const imgData = await noScriptTag?.evaluate((el) => {
+    //       const imgTag = el.innerHTML.match(/<img.*?src="(.*?)"/)
+    //       return imgTag?.[1]
+    //     })
+    //     console.log(imgData)
+    //     const imgSrc = imgData?.split('url=')[1]
+    //     const imgSrcDecoded = decodeURIComponent(imgSrc || '')
+    //     const img = imgSrcDecoded?.split('&')[0]
+
+    //     const imgElement = await div.$('.product__image')
+
+    //     // Price before discount. This doesnt always exist
+    //     const wasElement = await div.$('.price__was')
+    //     const wasTxt = await wasElement?.getProperty('textContent')
+    //     const was = await wasTxt?.jsonValue()
+
+    //     // These 2 can be removed
+    //     // Replace every non-digit character with an empty string
+    //     const priceDigits = price?.replace(/\D/g, '') || '0'
+    //     const priceNum = (parseFloat(priceDigits)/100)
+    //     const priceNumFixed = priceNum?.toFixed(2)
+
+    //     // Replace every non-digit character with an empty string
+    //     const wasDigits = was?.replace(/\D/g, '') || '0'
+    //     const wasNum = (parseFloat(wasDigits)/100)
+    //     const wasNumFixed = wasNum?.toFixed(2)
+
+    //     return {
+    //       name: title,
+    //       price: priceNum,
+    //       discounted_from: wasNum || priceNum,
+    //       img_url: img,
+    //       retailer_name: this.name,
+    //       retailer_product_url: link,
+    //       retailer_product_id: id
+    //     }
+    //   }))
+
+    //   return products
     })
 
     return products
