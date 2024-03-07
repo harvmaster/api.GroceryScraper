@@ -9,7 +9,7 @@ export const purgeProducts = async (req: Request, res: Response) => {
   //   res.status(500).send('Failed to purge products');
   // }
   try {
-    await Product.deleteMany({ tags: [] });
+    await Product.deleteMany({ img_url: '' });
     res.status(200).send('Products purged');
   } catch (e) {
     res.status(500).send('Failed to purge products');
