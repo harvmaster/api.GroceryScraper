@@ -1,6 +1,6 @@
-import { Request, Response, response } from "express";
-import Product from '../../models/Product';
-import { ProductProps, } from '../../models/Product';
+import { Request, Response } from "express";
+import Product from '../../models/Test';
+import { ProductProps } from '../../models/Test';
 import ProductPriceEvent from "../../models/ProductPriceEvent";
 
 type ProductWithPriceHistory = ProductProps & { price_history: any[] }
@@ -21,6 +21,14 @@ export const searchProduct = async (req: Request, res: Response) => {
       ]
     });
 
+    const newProduct = new Product({
+      retailer_product_id: 'test',
+      retailer_name: 'test',
+      name: 'test',
+      tags: ['test']
+    })
+
+    const id = dbProducts[0].create_date
     const products = dbProducts.map((product) => product.toJSONData());
 
     const productIds = products.map((product) => product.id);

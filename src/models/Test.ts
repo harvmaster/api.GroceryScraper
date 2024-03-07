@@ -1,4 +1,4 @@
-import mongoose, { Document, Model, Schema, Types, InferSchemaType, HydratedDocumentFromSchema, HydratedDocument } from 'mongoose'
+import mongoose, { Document, Model, Schema, Types, InferSchemaType } from 'mongoose'
 
 type SchemaInput = InferSchemaType<typeof schema>
 type SchemaProps = InferSchemaType<typeof schema> & { id: string, create_date: Date }
@@ -75,6 +75,5 @@ export type ProductInput = SchemaInput
 export type ProductProps = SchemaProps
 export type ProductMethods = SchemaMethods
 export type ProductStatics = SchemaStatics
-export type ProductDocument = HydratedDocument<SchemaProps, SchemaMethods>
 
 export default Product;

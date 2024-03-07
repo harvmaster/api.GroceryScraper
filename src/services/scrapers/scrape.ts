@@ -1,5 +1,5 @@
 import Products from '../../models/Product';
-import { IProductDocument } from '../../models/Product';
+import { ProductDocument } from '../../models/Product';
 
 import PriceEvents from '../../models/ProductPriceEvent';
 
@@ -13,12 +13,12 @@ interface ProductMatch {
 
 const getExistingProducts = async (products) => {
   const productIds = products.map((product) => product.retailer_product_id);
-  const existingProducts = await Products.find<IProductDocument>({ retailer_product_id: { $in: productIds } });
+  const existingProducts = await Products.find({ retailer_product_id: { $in: productIds } });
   return existingProducts;
 }
 
 // similar products are products with the same product_id and retailer
-const filterToExistingProducts = (scrapedProducts: Product[], existingProducts: IProductDocument[]): Product[] => {
+const filterToExistingProducts = (scrapedProducts: Product[], existingProducts: ProductDocument[]): Product[] => {
   const existingProductMap = existingProducts.reduce((acc, product) => {
     acc[product.retailer_product_id] = product;
     return acc;
@@ -28,7 +28,7 @@ const filterToExistingProducts = (scrapedProducts: Product[], existingProducts: 
 }
 
 // New products are products that dont exist in the database
-const filterToNewProducts = (scrapedProducts: Product[], existingProducts: IProductDocument[]): Product[] => {
+const filterToNewProducts = (scrapedProducts: Product[], existingProducts: ProductDocument[]): Product[] => {
   const existingProductMap = existingProducts.reduce((acc, product) => {
     acc[product.retailer_product_id] = product;
     return acc;
@@ -37,7 +37,7 @@ const filterToNewProducts = (scrapedProducts: Product[], existingProducts: IProd
   return scrapedProducts.filter((product) => !existingProductMap[product.retailer_product_id])
 }
 
-const getScrapedDocuments = (scrapedProducts: Product[], existingProducts: IProductDocument[]): IProductDocument[] => {
+const getScrapedDocuments = (scrapedProducts: Product[], existingProducts: ProductDocument[]): ProductDocument[] => {
   const existingProductMap = existingProducts.reduce((acc, product) => {
     acc[product.retailer_product_id] = product;
     return acc;
@@ -51,7 +51,7 @@ const getScrapedDocuments = (scrapedProducts: Product[], existingProducts: IProd
 /*
   Returns the list of products with the id field filled in with the id of the product in the local database
 */
-const addProductIds = (products: Product[], existingProducts: IProductDocument[]): (Product & { id: string })[] => {
+const addProductIds = (products: Product[], existingProducts: ProductDocument[]): (Product & { id: string })[] => {
   const existingProductMap = existingProducts.reduce((acc, product) => {
     acc[product.retailer_product_id] = product;
     return acc;
