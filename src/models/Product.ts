@@ -1,4 +1,4 @@
-import mongoose, { Document, Model, Schema, Types, InferSchemaType, HydratedDocumentFromSchema, HydratedDocument } from 'mongoose'
+import mongoose, { Document, Model, Schema, Types, InferSchemaType, HydratedDocument } from 'mongoose'
 
 type SchemaInput = InferSchemaType<typeof schema>
 type SchemaProps = InferSchemaType<typeof schema> & { id: string, create_date: Date }
