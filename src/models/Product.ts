@@ -4,10 +4,10 @@ type SchemaInput = InferSchemaType<typeof schema>
 type SchemaProps = InferSchemaType<typeof schema> & { id: string, create_date: Date }
 
 type SchemaMethods = {
-  toJSONData(): SchemaProps & { id: Types.ObjectId }
+  toJSONData(): ProductProps
 }
 type SchemaStatics = {
-  createProduct(product: SchemaProps): Promise<SchemaDocument<SchemaMethods>>
+  // createProduct(product: SchemaProps): Promise<SchemaDocument<SchemaMethods>>
 }
 
 type SchemaDocument<T> = Document<Types.ObjectId, T, SchemaProps>

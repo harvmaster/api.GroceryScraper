@@ -30,7 +30,7 @@ export const searchProduct = async (req: Request, res: Response) => {
     const responseData = []
     products.forEach((product) => {
       const prd: any = product
-      prd.price_history = priceEvents.filter((priceEvent) => priceEvent.product.toString() === product.id.toString());
+      // prd.price_history = priceEvents.filter((priceEvent) => priceEvent.product.toString() === product.id.toString());
       responseData.push(prd);
     });
 

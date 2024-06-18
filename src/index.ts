@@ -32,7 +32,7 @@ export const startServer = async () => {
   app.use(function (err, req, res, next) {
     next()
   })
-  app.use(routes)
+  app.use('/api', routes)
 
   //
   // Set port and start ExpressJS Server
