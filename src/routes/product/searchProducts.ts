@@ -24,13 +24,16 @@ export const searchProduct = async (req: Request, res: Response) => {
     const products = dbProducts.map((product) => product.toJSONData());
 
     const productIds = products.map((product) => product.id);
-    const priceEvents = await ProductPriceEvent.find({ product: { $in: productIds } });
+    const priceEvents = (await ProductPriceEvent.find({ product: { $in: productIds } })).filter((priceEvent) => priceEvent.product != null);
+
+    console.log(priceEvents)
 
     // add prices array to each product
     const responseData = []
     products.forEach((product) => {
       const prd: any = product
-      // prd.price_history = priceEvents.filter((priceEvent) => priceEvent.product.toString() === product.id.toString());
+      
+      prd.price_history = priceEvents.filter((priceEvent) => priceEvent.product.toString() === product.id.toString());
       responseData.push(prd);
     });
 
