@@ -1,5 +1,5 @@
 export type ScrapedProduct = {
-  retailer_name: string; // Coles, Woolworths, etc.
+  retailer: string; // Coles, Woolworths, etc.
   retailer_id: string; // Product ID on the retailer's website
   retailer_url: string; // URL of the product on the retailer's website
   barcode?: string; // Barcode of the product

@@ -2,6 +2,8 @@ import OpenAI from "openai";
 import config from '../../../config'
 const openaiApiKey = config.openaiApiKey
 
+import RateLimiter from "./RateLimiter";
+
 import { ProductProps } from "../../models/Product";
 
 const MAX_BATCH_SIZE = 30;

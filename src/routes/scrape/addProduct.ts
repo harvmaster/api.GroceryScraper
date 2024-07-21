@@ -20,6 +20,7 @@ export type AddProductBody = {
 
 const addProduct = async (req: Request<AddProductRequest>, res: Response) => {
   const { product, scraperKey }: AddProductBody = req.body;
+  console.log(product)
 
   // Check if scraperKey is valid
   if (!isValidScraperKey(scraperKey)) {
@@ -39,7 +40,7 @@ const addProduct = async (req: Request<AddProductRequest>, res: Response) => {
     const formattedProduct: ProductInput = {
       retailer_product_id: product.retailer_id,
       retailer_product_url: product.retailer_url,
-      retailer_name: product.retailer_name,
+      retailer_name: product.retailer,
       name: product.name,
       images: product.images,
       tags: [product.category, product.subcategory],
