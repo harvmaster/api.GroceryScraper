@@ -33,13 +33,19 @@ const schema = new Schema({
     required: true,
     index: true,
   },
-  img_url: {
+  description: {
     type: String,
     required: false
   },
+  brand: {
+    type: String,
+    required: false
+  },
+  images: {
+    type: [String],
+  },
   tags: {
     type: [String],
-    required: true
   },
   barcode: {
     type: String,
@@ -59,14 +65,16 @@ schema.methods.toJSONData = function (): ProductProps {
     retailer_product_url, 
     retailer_name, 
     name, 
+    description,
+    brand,
     barcode, 
-    img_url, 
+    images, 
     tags, 
     create_date, 
     id
   } = this.toObject() as SchemaProps;
 
-  return { retailer_product_id, retailer_product_url, retailer_name, id, name, barcode, img_url, tags, create_date };
+  return { retailer_product_id, retailer_product_url, retailer_name, id, name, description, brand, barcode, images, tags, create_date };
 }
 
 const Product = mongoose.model<SchemaProps, SchemaModel>('Product', schema)

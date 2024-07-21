@@ -1,20 +1,19 @@
-import mongoose, { Document, Model, Schema, Types } from 'mongoose'
+import mongoose, { Document, Model, Schema, Types, InferSchemaType, HydratedDocument } from 'mongoose'
 
-export interface IProductPriceEvent {
-  product: Schema.Types.ObjectId;
-  price: number;
-  discounted_from: number;
-  provider: string;
-  create_date: Date;
+type SchemaInput = InferSchemaType<typeof schema>
+type SchemaProps = InferSchemaType<typeof schema> & { id: string, create_date: Date }
+
+type SchemaMethods = {
+  toJSONData(): PriceEventProps
+}
+type SchemaStatics = {
+  // createPriceEvent(product: SchemaProps): Promise<SchemaDocument<SchemaMethods>>
 }
 
-export interface IProductPriceEventDocument extends IProductPriceEvent, Document {
-  toJSON(): IProductPriceEvent & { id: Types.ObjectId };
-}
+type SchemaDocument<T> = Document<Types.ObjectId, T, SchemaProps>
+type SchemaModel = Model<SchemaProps, {}, SchemaMethods> & SchemaStatics
 
-export interface IProductPriceEventModel extends Model<IProductPriceEventDocument> {}
-
-const schema: Schema<IProductPriceEventDocument> = new Schema({
+const schema = new Schema({
   product: {
     type : Schema.Types.ObjectId,
     ref: 'Product',
@@ -24,21 +23,35 @@ const schema: Schema<IProductPriceEventDocument> = new Schema({
     type: Number,
     required: true,
   },
-  discounted_from: {
+  was_price: {
     type: Number,
     required: true
   },
   create_date: {
     type: Date,
     default: Date.now,
+    required: false
   }
 })
 
-schema.methods.toJSON = function (): IProductPriceEvent & { id: Types.ObjectId } {
-  const { product, price, discounted_from, provider, create_date, _id: id } = this.toObject() as IProductPriceEventDocument & { _id: Types.ObjectId };
-  return { id, product, price, discounted_from, provider, create_date };
+schema.methods.toJSONData = function (): PriceEventProps {
+  const { 
+    product,
+    price,
+    was_price,
+    create_date, 
+    id
+  } = this.toObject() as SchemaProps;
+
+  return { id, product, price, was_price, create_date };
 }
 
-const ProductPriceEvent = mongoose.model<IProductPriceEventDocument, IProductPriceEventModel>('ProductPriceEvent', schema)
+const PriceEvent = mongoose.model<SchemaProps, SchemaModel>('PriceEvent', schema)
 
-export default ProductPriceEvent;
+export type PriceEventInput = SchemaInput
+export type PriceEventProps = SchemaProps
+export type PriceEventMethods = SchemaMethods
+export type PriceEventStatics = SchemaStatics
+export type PriceEventDocument = HydratedDocument<SchemaProps, SchemaMethods>
+
+export default PriceEvent;

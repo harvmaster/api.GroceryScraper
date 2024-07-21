@@ -11,10 +11,6 @@ export const isValidProduct = (product: any): boolean => {
   if (!product.retailer_url) return false
   if (typeof product.retailer_url !== 'string') return false
 
-  // barcode
-  if (!product.barcode) return false
-  if (typeof product.barcode !== 'string') return false
-
   // name
   if (!product.name) return false
   if (typeof product.name !== 'string') return false
@@ -38,10 +34,6 @@ export const isValidProduct = (product: any): boolean => {
   // was_price
   if (!product.was_price) return false
   if (typeof product.was_price !== 'number') return false
-
-  // unit
-  if (!product.unit) return false
-  if (typeof product.unit !== 'string') return false
 
   // category
   if (!product.category) return false
