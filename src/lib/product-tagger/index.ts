@@ -1,12 +1,13 @@
-import OpenAI from "openai";
 import config from '../../../config'
-const openaiApiKey = config.openaiApiKey
+const groqApiKey = config.GROQ_API_KEY
+
+import { ChatCompletion } from 'openai/resources';
 
 import RateLimiter from "./RateLimiter";
 
 import { ProductProps } from "../../models/Product";
 
-const MAX_BATCH_SIZE = 30;
+const MAX_BATCH_SIZE = 200;
 
 export class ProductTagger {
   private products: { product: ProductProps, done: (product: string[]) => void }[] = []
@@ -16,10 +17,13 @@ export class ProductTagger {
     return new Promise((resolve) => {
       this.products.push({ product, done: resolve })
 
-      if (this.products.length > 30) {
+      // If the batch is full, process it immediately
+      if (this.products.length > MAX_BATCH_SIZE) {
         this.processProductBatch()
         this.timer = null;
       }
+
+      // else wait for 1000ms before processing the next batch. This ensures we arent left waiting on an incomplete batch
       else if (!this.timer) {
         this.timer = setTimeout(() => {
           this.processProductBatch()
@@ -59,9 +63,8 @@ export class ProductTagger {
   }
 
   private async callBatchAPI(batch: { name: string, description: string, brand: string }[]) {
-    const openaiClient = new OpenAI({
-      apiKey: openaiApiKey,
-    })
+    
+    const groqApi = 'https://api.groq.com/openai/v1/';
 
     const system = `
       Given an array of items, provide a list of tags that describe the individual items.
@@ -70,27 +73,39 @@ export class ProductTagger {
     `
 
     const items = batch.map(product => JSON.stringify(product)).join(', ')
-    
-    const response = await openaiClient.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content: system
-        },
-        {
-          role: "user",
-          content: `[${items}]`
-        },
-      ],
-      temperature: 0.4,
-      max_tokens: 8192,
-      top_p: 1,
-      frequency_penalty: 0,
-      presence_penalty: 0,
-    });
+
+    let body: ChatCompletion;
     try {
-      const json = JSON.parse(response.choices[0].message.content);
+      const response = await fetch(`${groqApi}/chat/completions`, {
+        method: 'POST',
+        body: JSON.stringify({
+          model: 'llama-3.1-70b-versatile',
+          messages: [
+            {
+              role: "system",
+              content: system
+            },
+            {
+              role: "user",
+              content: `[${items}]`
+            },
+          ],
+          stream: false,
+          temperature: 1
+        }),
+        headers: {
+          Authorization: `Bearer ${groqApiKey}`,
+        }
+      });
+
+      body = await response.json() as ChatCompletion;
+    } catch (err) {
+      console.error(err);
+      return {};
+    }
+
+    try {
+      const json = JSON.parse(body.choices[0].message.content);
       return json.items
     } catch (e) {
       console.error(e)
