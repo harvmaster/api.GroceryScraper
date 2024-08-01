@@ -32,6 +32,11 @@ const addProduct = async (req: Request<AddProductRequest>, res: Response) => {
     return res.status(400).json({ message: 'Invalid product' });
   }
 
+  // Return 201
+  // We do this here so we don't have to keep requests alive while we process the product
+  // We may take a long time to generate tags, so we don't want to keep the scraper waiting
+  res.status(201).send()
+
   // Is product already in the database?
   let productInstance = await Product.findOne({ retailer_product_id: product.retailer_id });
 
@@ -50,6 +55,7 @@ const addProduct = async (req: Request<AddProductRequest>, res: Response) => {
     // Create new product
     productInstance = new Product(formattedProduct);
 
+    // Generate tags
     // Add product to product tagger batch
     const tags = await productTagger.getProductTags(productInstance);
     const uniqueTags = dedupe([...tags, ...productInstance.tags]);
@@ -68,9 +74,6 @@ const addProduct = async (req: Request<AddProductRequest>, res: Response) => {
 
   const priceEventInstance = new ProductPriceEvent(priceEvent);
   await priceEventInstance.save();
-
-  // Return 201
-  return res.status(201).send()
 }
 
 export default addProduct;
