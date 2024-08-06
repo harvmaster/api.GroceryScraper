@@ -20,7 +20,7 @@ export type AddProductBody = {
 
 const addProduct = async (req: Request<AddProductRequest>, res: Response) => {
   const { product, scraperKey }: AddProductBody = req.body;
-  console.log(product)
+  // console.log(product)
 
   // Check if scraperKey is valid
   if (!isValidScraperKey(scraperKey)) {
@@ -54,7 +54,11 @@ const addProduct = async (req: Request<AddProductRequest>, res: Response) => {
 
     // Create new product
     productInstance = new Product(formattedProduct);
+    await productInstance.save();
+  }
 
+  // Check if product has more tags than just category and sub-category
+  if (!productInstance.tags || productInstance.tags.every(tag => [product.category, product.subcategory].includes(tag))) {
     // Generate tags
     // Add product to product tagger batch
     const tags = await productTagger.getProductTags(productInstance);
@@ -62,7 +66,11 @@ const addProduct = async (req: Request<AddProductRequest>, res: Response) => {
     productInstance.tags = uniqueTags;
 
     // Save product
-    await productInstance.save();
+    try {
+      await productInstance.save()
+    } catch (err) {
+      console.error(`Failed to save product (${product.name}) with tags (${tags.join(', ')})`, err);
+    }
   }
 
   // Create price event

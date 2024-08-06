@@ -1,6 +1,6 @@
 import { ScrapedProduct } from '../../types'
 
-const DEBUG = true
+const DEBUG = false
 const debug = (str: string) => {
   if (DEBUG) console.log(str)
 }

@@ -1,48 +1,54 @@
-class RateLimiter {
+class RateLimitQueue {
+  maxRequests: any;
+  interval: number;
+  queue: any[];
+  timer: any;
+  requestCount: number;
 
-  maxRequests: number
-  interval: number
-  tokens: number
-  lastRefill: number
-  refillRate: number
-
-  constructor(maxRequests, interval) {
+  constructor(maxRequests: number, interval: number) {
     this.maxRequests = maxRequests;
     this.interval = interval;
-    this.tokens = maxRequests;
-    this.lastRefill = Date.now();
-    this.refillRate = maxRequests / (interval * 1000); // Tokens per millisecond
+    this.queue = [];
+    this.timer = null;
+    this.requestCount = 0;
   }
 
-  refillTokens() {
-    const now = Date.now();
-    const timePassed = now - this.lastRefill;
-    const tokensToAdd = timePassed * this.refillRate;
-    this.tokens = Math.min(this.maxRequests, this.tokens + tokensToAdd);
-    this.lastRefill = now;
-  }
-
-  tryConsume() {
-    this.refillTokens();
-    if (this.tokens >= 1) {
-      this.tokens--;
-      return true;
-    }
-    return false;
-  }
-
-  async consume() {
+  async add<T>(requestFunction: () => Promise<T>): Promise<T> {
     return new Promise((resolve, reject) => {
-      if (this.tryConsume()) {
-        resolve(undefined);
-      } else {
-        const timeToWait = Math.ceil(this.tokens / this.refillRate);
-        setTimeout(() => {
-          this.consume().then(resolve).catch(reject);
-        }, timeToWait);
-      }
+      const task = { requestFunction, resolve, reject };
+      this.queue.push(task);
+      this.dequeue();
     });
+  }
+
+  async dequeue() {
+    if (this.timer === null) {
+      this.timer = setInterval(() => {
+        this.requestCount = 0;
+        this.executeQueue();
+      }, this.interval);
+    }
+
+    if (this.requestCount < this.maxRequests) {
+      this.executeQueue();
+    }
+  }
+
+  async executeQueue() {
+    if (this.queue.length === 0 || this.requestCount >= this.maxRequests) {
+      return;
+    }
+
+    const task = this.queue.shift();
+    this.requestCount++;
+
+    try {
+      const result = await task.requestFunction();
+      task.resolve(result);
+    } catch (error) {
+      task.reject(error);
+    }
   }
 }
 
-export default RateLimiter;
+export default RateLimitQueue;

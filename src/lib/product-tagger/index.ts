@@ -1,24 +1,24 @@
-import config from '../../../config'
-const groqApiKey = config.GROQ_API_KEY
-
-import { ChatCompletion } from 'openai/resources';
-
-import RateLimiter from "./RateLimiter";
-
 import { ProductProps } from "../../models/Product";
+import { TaggingAgent } from './tagging-agents/types';
 
-const MAX_BATCH_SIZE = 200;
+import { gpt4o_Mini } from "./tagging-agents/openai";
 
 export class ProductTagger {
   private products: { product: ProductProps, done: (product: string[]) => void }[] = []
   private timer: NodeJS.Timeout | null = null;
+
+  MAX_BATCH_SIZE: number;
+
+  constructor(private taggingAgent: TaggingAgent) {
+    this.MAX_BATCH_SIZE = taggingAgent.contextLength / 200;
+  }
 
   getProductTags(product: ProductProps): Promise<string[]> {
     return new Promise((resolve) => {
       this.products.push({ product, done: resolve })
 
       // If the batch is full, process it immediately
-      if (this.products.length > MAX_BATCH_SIZE) {
+      if (this.products.length > this.MAX_BATCH_SIZE) {
         this.processProductBatch()
         this.timer = null;
       }
@@ -34,8 +34,8 @@ export class ProductTagger {
   }
 
   private async processProductBatch() {
-    // determine the size of the batch. If there are less than 30 products, use the length of the products array
-    const batchSize = Math.min(this.products.length, MAX_BATCH_SIZE);
+    // determine the size of the batch. If there are less than (MAX_BATCH_SIZE) products, use the length of the products array
+    const batchSize = Math.min(this.products.length, this.MAX_BATCH_SIZE);
 
     // Get the products to process
     const products = this.products.splice(0, batchSize);
@@ -62,51 +62,12 @@ export class ProductTagger {
     })
   }
 
+  // Use the tagging agent to get tags for a batch of products
   private async callBatchAPI(batch: { name: string, description: string, brand: string }[]) {
-    
-    const groqApi = 'https://api.groq.com/openai/v1/';
-
-    const system = `
-      Given an array of items, provide a list of tags that describe the individual items.
-      Respond in a json format like this { success: boolean, items: { itemName: string[] } }. 
-      Be verbose with the amount of tags. Minimum 7 tags per item.
-    `
-
-    const items = batch.map(product => JSON.stringify(product)).join(', ')
-
-    let body: ChatCompletion;
     try {
-      const response = await fetch(`${groqApi}/chat/completions`, {
-        method: 'POST',
-        body: JSON.stringify({
-          model: 'llama-3.1-70b-versatile',
-          messages: [
-            {
-              role: "system",
-              content: system
-            },
-            {
-              role: "user",
-              content: `[${items}]`
-            },
-          ],
-          stream: false,
-          temperature: 1
-        }),
-        headers: {
-          Authorization: `Bearer ${groqApiKey}`,
-        }
-      });
-
-      body = await response.json() as ChatCompletion;
-    } catch (err) {
-      console.error(err);
-      return {};
-    }
-
-    try {
-      const json = JSON.parse(body.choices[0].message.content);
-      return json.items
+      const response = await this.taggingAgent.getBatchTags(batch)
+      console.log(response)
+      return response
     } catch (e) {
       console.error(e)
       return {}
@@ -114,6 +75,6 @@ export class ProductTagger {
   }
 }
 
-const productTagger = new ProductTagger();
+const productTagger = new ProductTagger(gpt4o_Mini);
 
 export default productTagger;
